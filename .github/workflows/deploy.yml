@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to deploy
+        required: false
+        default: main
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to LAPTOP-1D7N1LCO
+    # Runner tự cài trên máy Windows, gắn label `uniprep`.
+    runs-on: [self-hosted, Windows, X64, uniprep]
+    environment: production
+
+    steps:
+      # Cố ý KHÔNG dùng actions/checkout ở đây.
+      # Mặc định checkout chạy `git clean -ffdx` -> xoá sạch file bị gitignore
+      # (backend/.env, frontend/.env, node_modules, dist). Script deploy tự
+      # `git fetch` + `git pull --ff-only` trong thư mục live nên an toàn hơn:
+      # có thay đổi chưa commit thì nó TỪ CHỐI chứ không ghi đè.
+      - name: Deploy
+        shell: cmd
+        run: D:\Bach_Khoa\DATH\UniPrep\deploy\deploy.bat ${{ inputs.branch || github.ref_name }}
