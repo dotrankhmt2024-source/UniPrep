@@ -1,0 +1,33 @@
+# dependencies
+/node_modules
+
+# build output
+/dist
+/dist-ssr
+*.local
+
+# vite
+.vite
+node_modules/.tmp
+
+# env
+.env
+.env.*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+
+# editor
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

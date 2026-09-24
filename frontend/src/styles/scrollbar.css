@@ -1,0 +1,58 @@
+/*
+ * Custom scrollbar dùng chung cho toàn app.
+ * Màu lấy từ token Material 3 trong `styles/theme.css` nên tự đổi theo light/dark.
+ */
+
+html {
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-outline-variant) transparent;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	/* Viền trong suốt + background-clip giúp thumb mảnh ~4px thay vì chiếm hết 10px. */
+	background-color: color-mix(in srgb, var(--color-outline) 45%, transparent);
+	border: 3px solid transparent;
+	border-radius: 999px;
+	background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background-color: color-mix(in srgb, var(--color-secondary) 70%, transparent);
+}
+
+::-webkit-scrollbar-thumb:active {
+	background-color: var(--color-secondary);
+}
+
+.dark {
+	scrollbar-color: color-mix(in srgb, var(--color-outline-variant) 70%, transparent) transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+	background-color: color-mix(in srgb, var(--color-outline-variant) 60%, transparent);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+	background-color: color-mix(in srgb, var(--color-secondary-fixed-dim) 80%, transparent);
+}
+
+/** Ẩn scrollbar nhưng vẫn cuộn được (dùng cho các dải tab/filter ngang). */
+.scrollbar-hidden {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+	width: 0;
+	height: 0;
+}
