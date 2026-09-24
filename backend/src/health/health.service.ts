@@ -4,9 +4,7 @@ import { DataSource } from 'typeorm';
 
 @Injectable()
 export class HealthService {
-	constructor(
-		@InjectDataSource() private readonly dataSource: DataSource,
-	) { }
+	constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
 	async check() {
 		const uptimeSeconds = process.uptime();

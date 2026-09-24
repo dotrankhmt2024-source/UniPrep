@@ -64,6 +64,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 			if (typeof exMsg === 'string') message = exMsg;
 		}
 
-		response.status(status).json(buildError(this.normalizeMessage(status, message)));
+		response
+			.status(status)
+			.json(buildError(this.normalizeMessage(status, message)));
 	}
 }

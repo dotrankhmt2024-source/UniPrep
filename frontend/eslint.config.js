@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-	{ ignores: ['dist'] },
+	// ESLint 9 flat config KHONG tu bo qua dotfiles (khac ESLint 8 + .eslintignore)
+	// -> phai ignore .vite, neu khong se quet cache bundle cua Vite va bao loi gia.
+	{ ignores: ['dist', '.vite'] },
 	{
 		extends: [js.configs.recommended, ...tseslint.configs.recommended],
 		files: ['**/*.{ts,tsx}'],

@@ -15,7 +15,7 @@ import { UpdateStudentDto } from './dto/update-student.dto';
 @ApiTags('Student')
 @Controller('students')
 export class StudentController {
-	constructor(private readonly studentService: StudentService) { }
+	constructor(private readonly studentService: StudentService) {}
 
 	@Post()
 	@ApiOperation({ summary: 'Tạo sinh viên mới' })

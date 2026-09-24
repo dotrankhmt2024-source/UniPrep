@@ -10,7 +10,7 @@ export class StudentService {
 	constructor(
 		@InjectRepository(Student)
 		private readonly studentRepo: Repository<Student>,
-	) { }
+	) {}
 
 	async create(dto: CreateStudentDto): Promise<Student> {
 		const student = this.studentRepo.create(dto);

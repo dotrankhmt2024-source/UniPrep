@@ -23,7 +23,9 @@ const flattenValidationErrors = (
 			: error.property;
 
 		if (error.constraints) {
-			messages.push(...Object.values(error.constraints).map((c) => `${currentPath}: ${c}`));
+			messages.push(
+				...Object.values(error.constraints).map((c) => `${currentPath}: ${c}`),
+			);
 		}
 
 		if (error.children?.length) {
@@ -83,7 +85,10 @@ async function bootstrap() {
 	const swaggerConfig = new DocumentBuilder()
 		.setTitle(configService.get<string>('SWAGGER_TITLE', 'UniPrep API'))
 		.setDescription(
-			configService.get<string>('SWAGGER_DESCRIPTION', 'UniPrep API documentation'),
+			configService.get<string>(
+				'SWAGGER_DESCRIPTION',
+				'UniPrep API documentation',
+			),
 		)
 		.setVersion(configService.get<string>('SWAGGER_VERSION', '1.0'))
 		.addBearerAuth()
@@ -99,7 +104,9 @@ async function bootstrap() {
 	const port = configService.get<number>('PORT') || 3000;
 	await app.listen(port);
 	console.log(`Server đang chạy tại http://localhost:${port}`);
-	console.log(`Swagger docs available at http://localhost:${port}/${swaggerPath}`);
+	console.log(
+		`Swagger docs available at http://localhost:${port}/${swaggerPath}`,
+	);
 }
 bootstrap().catch((err) => {
 	console.error('Không thể khởi động ứng dụng', err);

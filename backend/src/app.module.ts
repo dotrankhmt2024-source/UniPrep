@@ -32,4 +32,4 @@ import { StudentModule } from './student/student.module';
 	controllers: [AppController],
 	providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

@@ -18,7 +18,10 @@ export class CreateStudentDto {
 	@IsNotEmpty()
 	studentCode: string;
 
-	@ApiProperty({ example: 'sv2026001@hcmut.edu.vn', description: 'Email sinh viên' })
+	@ApiProperty({
+		example: 'sv2026001@hcmut.edu.vn',
+		description: 'Email sinh viên',
+	})
 	@IsEmail()
 	@IsNotEmpty()
 	email: string;
@@ -28,7 +31,10 @@ export class CreateStudentDto {
 	@IsOptional()
 	phone?: string;
 
-	@ApiPropertyOptional({ example: 'Khoa học máy tính', description: 'Ngành học' })
+	@ApiPropertyOptional({
+		example: 'Khoa học máy tính',
+		description: 'Ngành học',
+	})
 	@IsString()
 	@IsOptional()
 	major?: string;
