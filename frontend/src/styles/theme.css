@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens extracted from UniPrep/frontend/design/*.html (Material 3 palette).
+ * Keep in sync if the design mockups change.
+ */
+@theme {
+	--color-on-primary-fixed-variant: #3f465c;
+	--color-on-secondary-container: #00476e;
+	--color-secondary-container: #5bb8fe;
+	--color-surface-container-lowest: #ffffff;
+	--color-error: #ba1a1a;
+	--color-on-error-container: #93000a;
+	--color-inverse-surface: #213145;
+	--color-outline-variant: #c6c6cd;
+	--color-tertiary-fixed-dim: #68dba9;
+	--color-primary: #000000;
+	--color-tertiary-fixed: #85f8c4;
+	--color-secondary-fixed-dim: #93ccff;
+	--color-on-primary: #ffffff;
+	--color-surface-variant: #d3e4fe;
+	--color-surface-container: #e5eeff;
+	--color-tertiary-container: #002114;
+	--color-on-secondary-fixed-variant: #004b73;
+	--color-surface-container-highest: #d3e4fe;
+	--color-on-error: #ffffff;
+	--color-on-secondary-fixed: #001d31;
+	--color-secondary: #006398;
+	--color-on-tertiary-fixed: #002114;
+	--color-on-tertiary-container: #069669;
+	--color-on-tertiary-fixed-variant: #005137;
+	--color-tertiary: #000000;
+	--color-surface-bright: #f8f9ff;
+	--color-primary-container: #131b2e;
+	--color-on-primary-container: #7c839b;
+	--color-on-background: #0b1c30;
+	--color-on-surface-variant: #45464d;
+	--color-outline: #76777d;
+	--color-surface: #f8f9ff;
+	--color-surface-container-high: #dce9ff;
+	--color-on-surface: #0b1c30;
+	--color-primary-fixed: #dae2fd;
+	--color-inverse-primary: #bec6e0;
+	--color-primary-fixed-dim: #bec6e0;
+	--color-surface-dim: #cbdbf5;
+	--color-surface-container-low: #eff4ff;
+	--color-inverse-on-surface: #eaf1ff;
+	--color-on-primary-fixed: #131b2e;
+	--color-surface-tint: #565e74;
+	--color-background: #f8f9ff;
+	--color-error-container: #ffdad6;
+	--color-secondary-fixed: #cce5ff;
+	--color-on-secondary: #ffffff;
+	--color-on-tertiary: #ffffff;
+
+	--spacing-margin: 2rem;
+	--spacing-gutter: 1.5rem;
+	--spacing-gutter-sm: 1rem;
+	--spacing-margin-sm: 1rem;
+	--spacing-space-xs: 0.25rem;
+	--spacing-space-xl: 2.5rem;
+	--spacing-space-lg: 1.5rem;
+	--spacing-space-sm: 0.5rem;
+	--spacing-space-md: 1rem;
+
+	--font-headline-lg: "Source Serif 4", serif;
+	--font-headline-md: "Source Serif 4", serif;
+	--font-headline-sm: "Source Serif 4", serif;
+	--font-display: "Source Serif 4", serif;
+	--font-body-md: "Hanken Grotesk", sans-serif;
+	--font-body-sm: "Hanken Grotesk", sans-serif;
+	--font-label-md: "Hanken Grotesk", sans-serif;
+	--font-label-sm: "Hanken Grotesk", sans-serif;
+	--font-label-lg: "Hanken Grotesk", sans-serif;
+	--font-title-sm: "Hanken Grotesk", sans-serif;
+	--font-title-md: "Hanken Grotesk", sans-serif;
+	--font-title-lg: "Hanken Grotesk", sans-serif;
+	--font-body-lg: "Hanken Grotesk", sans-serif;
+
+	--text-headline-lg: 32px;
+	--text-headline-lg--line-height: 40px;
+	--text-headline-md: 24px;
+	--text-headline-md--line-height: 32px;
+	--text-headline-sm: 20px;
+	--text-headline-sm--line-height: 28px;
+	--text-display: 40px;
+	--text-display--line-height: 48px;
+	--text-title-sm: 14px;
+	--text-title-sm--line-height: 20px;
+	--text-title-md: 16px;
+	--text-title-md--line-height: 24px;
+	--text-title-lg: 18px;
+	--text-title-lg--line-height: 26px;
+	--text-body-sm: 12px;
+	--text-body-sm--line-height: 18px;
+	--text-body-md: 14px;
+	--text-body-md--line-height: 22px;
+	--text-body-lg: 16px;
+	--text-body-lg--line-height: 24px;
+	--text-label-sm: 11px;
+	--text-label-sm--line-height: 14px;
+	--text-label-md: 12px;
+	--text-label-md--line-height: 16px;
+	--text-label-lg: 14px;
+	--text-label-lg--line-height: 20px;
+}
+
+.dark {
+	--color-background: #0b1220;
+	--color-surface: #0b1220;
+	--color-surface-container-lowest: #10192b;
+	--color-surface-container-low: #16223a;
+	--color-surface-container: #1b2942;
+	--color-on-surface: #eaf1ff;
+	--color-on-surface-variant: #b4c0d6;
+	--color-outline-variant: #2c3a56;
+}
+
+.material-symbols-outlined {
+	font-family: "Material Symbols Outlined";
+	font-weight: normal;
+	font-style: normal;
+	font-size: 24px;
+	line-height: 1;
+	letter-spacing: normal;
+	text-transform: none;
+	display: inline-block;
+	white-space: nowrap;
+	word-wrap: normal;
+	direction: ltr;
+	-webkit-font-feature-settings: "liga";
+	-webkit-font-smoothing: antialiased;
+}
