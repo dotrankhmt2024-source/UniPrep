@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background text-on-background" lang="vi">
+
+<head>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+	<title>EduLMS Portal - Quản lý khóa học &amp; Giảng dạy</title>
+	<link href="https://fonts.googleapis.com" rel="preconnect" />
+	<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+	<link
+		href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;display=swap"
+		rel="stylesheet" />
+	<link
+		href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+		rel="stylesheet" />
+	<link
+		href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+		rel="stylesheet" />
+	<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+	<script id="tailwind-config">
+		tailwind.config = {
+			darkMode: "class",
+			theme: {
+				extend: {
+					"colors": {
+						"on-primary-fixed-variant": "#3f465c",
+						"on-secondary-container": "#00476e",
+						"secondary-container": "#5bb8fe",
+						"surface-container-lowest": "#ffffff",
+						"error": "#ba1a1a",
+						"on-error-container": "#93000a",
+						"inverse-surface": "#213145",
+						"outline-variant": "#c6c6cd",
+						"tertiary-fixed-dim": "#68dba9",
+						"primary": "#000000",
+						"tertiary-fixed": "#85f8c4",
+						"secondary-fixed-dim": "#93ccff",
+						"on-primary": "#ffffff",
+						"surface-variant": "#d3e4fe",
+						"surface-container": "#e5eeff",
+						"tertiary-container": "#002114",
+						"on-secondary-fixed-variant": "#004b73",
+						"surface-container-highest": "#d3e4fe",
+						"on-error": "#ffffff",
+						"on-secondary-fixed": "#001d31",
+						"secondary": "#006398",
+						"on-tertiary-fixed": "#002114",
+						"on-tertiary-container": "#069669",
+						"on-tertiary-fixed-variant": "#005137",
+						"tertiary": "#000000",
+						"surface-bright": "#f8f9ff",
+						"primary-container": "#131b2e",
+						"on-primary-container": "#7c839b",
+						"on-background": "#0b1c30",
+						"on-surface-variant": "#45464d",
+						"outline": "#76777d",
+						"surface": "#f8f9ff",
+						"surface-container-high": "#dce9ff",
+						"on-surface": "#0b1c30",
+						"primary-fixed": "#dae2fd",
+						"inverse-primary": "#bec6e0",
+						"primary-fixed-dim": "#bec6e0",
+						"surface-dim": "#cbdbf5",
+						"surface-container-low": "#eff4ff",
+						"inverse-on-surface": "#eaf1ff",
+						"on-primary-fixed": "#131b2e",
+						"surface-tint": "#565e74",
+						"background": "#f8f9ff",
+						"error-container": "#ffdad6",
+						"secondary-fixed": "#cce5ff",
+						"on-secondary": "#ffffff",
+						"on-tertiary": "#ffffff"
+					},
+					"borderRadius": {
+						"DEFAULT": "0.25rem",
+						"lg": "0.5rem",
+						"xl": "0.75rem",
+						"full": "9999px"
+					},
+					"spacing": {
+						"margin": "2rem",
+						"gutter": "1.5rem",
+						"gutter-sm": "1rem",
+						"margin-sm": "1rem",
+						"space-xs": "0.25rem",
+						"space-xl": "2.5rem",
+						"space-lg": "1.5rem",
+						"space-sm": "0.5rem",
+						"space-md": "1rem"
+					},
+					"fontFamily": {
+						"headline-lg": ["\"Source Serif 4\""],
+						"body-md": ["Hanken Grotesk"],
+						"body-sm": ["Hanken Grotesk"],
+						"label-md": ["Hanken Grotesk"],
+						"headline-sm": ["\"Source Serif 4\""],
+						"title-sm": ["Hanken Grotesk"],
+						"display": ["\"Source Serif 4\""],
+						"headline-lg-mobile": ["\"Source Serif 4\""],
+						"label-sm": ["Hanken Grotesk"],
+						"title-md": ["Hanken Grotesk"],
+						"headline-md": ["\"Source Serif 4\""],
+						"title-lg": ["Hanken Grotesk"],
+						"body-lg": ["Hanken Grotesk"],
+						"label-lg": ["Hanken Grotesk"],
+						"display-mobile": ["\"Source Serif 4\""]
+					},
+					"fontSize": {
+						"headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+						"body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+						"body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+						"label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+						"headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+						"title-sm": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+						"display": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+						"headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+						"label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+						"title-md": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+						"headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+						"title-lg": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+						"body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+						"label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+						"display-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+					}
+				},
+			},
+		}
+	</script>
+</head>
+
+<body class="h-full antialiased font-body-md text-on-background bg-surface-bright flex">
+	<!-- ================= SIDEBAR NAVIGATION (Shared Component Anchor) ================= -->
+	<aside
+		class="fixed top-0 left-0 h-full w-64 z-30 flex flex-col justify-between py-space-lg px-space-md border-r border-outline-variant bg-surface-container-lowest">
+		<div>
+			<!-- Institutional Logo Header -->
+			<div class="flex items-center gap-3 px-space-sm mb-6">
+				<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary">
+					<span class="material-symbols-outlined text-xl">account_balance</span>
+				</div>
+				<div class="flex flex-col">
+					<span class="text-title-md font-title-md font-bold text-on-surface leading-tight">EduLMS
+						Portal</span>
+					<span class="text-label-md font-label-md text-on-surface-variant">Hệ thống Đào tạo Số</span>
+				</div>
+			</div>
+			<!-- Quick CTA Button -->
+			<button
+				class="w-full mb-6 flex items-center justify-center gap-2 py-2.5 px-4 bg-primary text-on-primary rounded-lg text-title-sm font-title-sm hover:bg-primary-container transition-all duration-150 shadow-sm active:scale-98"
+				onclick="toggleModal(true)">
+				<span class="material-symbols-outlined text-lg">add_circle</span>
+				<span>Tạo học phần mới</span>
+			</button>
+			<!-- Main Navigation Menu -->
+			<nav class="space-y-1">
+				<!-- Item 1: Dashboard & Khóa học -->
+				<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150"
+					href="#">
+					<span class="material-symbols-outlined text-xl">dashboard</span>
+					<span class="text-label-md font-label-md">Dashboard &amp; Khóa học</span>
+				</a>
+				<!-- Item 2: Danh mục khóa học -->
+				<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150"
+					href="#">
+					<span class="material-symbols-outlined text-xl">school</span>
+					<span class="text-label-md font-label-md">Danh mục khóa học</span>
+				</a>
+				<!-- Item 3: Tiến độ & AI Insights -->
+				<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150"
+					href="#">
+					<span class="material-symbols-outlined text-xl">insights</span>
+					<span class="text-label-md font-label-md">Tiến độ &amp; AI Insights</span>
+				</a>
+				<!-- Item 4: Quản lý giảng dạy (ACTIVE STATE per JSON spec and Page Intent) -->
+				<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg bg-surface-container-low text-secondary font-semibold border-l-4 border-secondary"
+					href="#">
+					<span class="material-symbols-outlined text-xl"
+						style="font-variation-settings: 'FILL' 1;">cast_for_education</span>
+					<span class="text-label-md font-label-md">Quản lý giảng dạy</span>
+				</a>
+				<!-- Item 5: Lịch học & Deadline -->
+				<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150"
+					href="#">
+					<span class="material-symbols-outlined text-xl">calendar_month</span>
+					<span class="text-label-md font-label-md">Lịch học &amp; Deadline</span>
+				</a>
+				<!-- Item 6: Thư viện tài nguyên -->
+				<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150"
+					href="#">
+					<span class="material-symbols-outlined text-xl">menu_book</span>
+					<span class="text-label-md font-label-md">Thư viện tài nguyên</span>
+				</a>
+			</nav>
+		</div>
+		<!-- Footer Utility Links -->
+		<div class="pt-4 border-t border-outline-variant/50 space-y-1">
+			<a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150"
+				href="#">
+				<span class="material-symbols-outlined text-lg">help</span>
+				<span class="text-body-sm font-body-sm">Hỗ trợ kỹ thuật</span>
+			</a>
+			<a class="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150"
+				href="#">
+				<span class="material-symbols-outlined text-lg">settings</span>
+				<span class="text-body-sm font-body-sm">Cài đặt</span>
+			</a>
+			<!-- System status indicator -->
+			<div class="mt-3 px-space-md py-2 bg-surface-container-low rounded-lg flex items-center justify-between">
+				<div class="flex items-center gap-2">
+					<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+					<span class="text-label-sm font-label-sm text-on-surface-variant">Hệ thống Ổn định</span>
+				</div>
+				<span class="text-label-sm font-label-sm text-secondary font-semibold">v3.4</span>
+			</div>
+		</div>
+	</aside>
+	<!-- ================= MAIN CONTENT WRAPPER ================= -->
+	<div class="pl-64 flex-1 flex flex-col min-h-screen">
+		<!-- ================= TOPNAVBAR (Shared Component Anchor) ================= -->
+		<header
+			class="sticky top-0 z-20 w-full h-16 flex items-center justify-between px-gutter border-b border-outline-variant bg-surface-container-lowest shadow-sm">
+			<!-- Left side: Search & Semester Context -->
+			<div class="flex items-center gap-4 flex-1 max-w-xl">
+				<div class="relative w-80">
+					<span
+						class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-lg pointer-events-none">search</span>
+					<input
+						class="w-full pl-10 pr-4 py-1.5 text-body-md font-body-md bg-surface-bright border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent"
+						placeholder="Tìm khóa học, sinh viên, học phần..." type="text" />
+				</div>
+				<div
+					class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-bright">
+					<span class="material-symbols-outlined text-secondary text-base">calendar_today</span>
+					<span class="text-label-md font-label-md font-semibold text-secondary">Học kỳ 1 (2024-2025)</span>
+				</div>
+			</div>
+			<!-- Right side: Instructor Badge, Language, Actions & Profile -->
+			<div class="flex items-center gap-3">
+				<!-- Faculty Mode Badge -->
+				<span
+					class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-sm font-label-sm bg-surface-container-low text-secondary border border-secondary-container">
+					<span class="material-symbols-outlined text-sm">badge</span>
+					Chế độ Giảng viên (Instructor Mode)
+				</span>
+				<!-- Language Switcher -->
+				<button
+					class="px-2.5 py-1 text-label-md font-label-md text-on-surface-variant hover:text-on-surface rounded border border-outline-variant/60 flex items-center gap-1">
+					<span class="material-symbols-outlined text-sm">translate</span>
+					<span>VN / EN</span>
+				</button>
+				<!-- Notification with Pending Grading Badge -->
+				<button
+					class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150"
+					title="Thông báo chấm bài">
+					<span class="material-symbols-outlined text-xl">notifications</span>
+					<span
+						class="absolute top-1 right-1 w-4 h-4 bg-error text-on-error rounded-full text-[10px] font-bold flex items-center justify-center">18</span>
+				</button>
+				<!-- Switch view action -->
+				<button
+					class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150"
+					title="Chuyển chế độ sinh viên">
+					<span class="material-symbols-outlined text-xl">swap_horiz</span>
+				</button>
+				<!-- Profile Avatar & Details -->
+				<div class="flex items-center gap-3 pl-3 border-l border-outline-variant">
+					<div class="text-right hidden sm:block">
+						<p class="text-title-sm font-title-sm text-on-surface leading-tight">ThS. TS. Trần Minh Tuấn</p>
+						<p class="text-label-sm font-label-sm text-on-surface-variant">Khoa Công nghệ Thông tin</p>
+					</div>
+					<div class="relative">
+						<img class="w-10 h-10 rounded-full border-2 border-secondary object-cover"
+							data-alt="Professional studio portrait of an experienced male university professor in Vietnam wearing scholarly glasses and a dark navy blazer, illuminated by bright daylight in an architectural academic campus office with bookshelves in the soft background."
+							src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeavbEW5Ov2OvAVIIkKQPJSV19QZBdBuQtDGce28jWtqb3psvoeW8LrNF8NEyXDuvVd60uwTZVldKS7qEA2AG2HeCOi1RNlucN4-pe8-CGJXBoykTkyACZk4k3uasJbw7l59Lk8-HAdsSC6FJxER5gBdUmjI-1fbFhJBk7GBMqomhfBJectTTrGKRSNFdy5EiolpTybKXPBDJGAG23fKJRWptWndVat6vOVtMBIm6od-mihD3Y_mhxGQ" />
+						<span
+							class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-surface-container-lowest"></span>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- ================= MAIN DASHBOARD BODY ================= -->
+		<main class="flex-1 p-gutter space-y-6">
+			<!-- Administrative Header Section -->
+			<div
+				class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-outline-variant/40">
+				<div>
+					<div class="flex items-center gap-2 mb-1">
+						<span
+							class="text-label-sm font-label-sm text-secondary bg-surface-container-low px-2 py-0.5 rounded uppercase">Cổng
+							Học Vụ Đại Học</span>
+						<span class="text-outline text-xs">•</span>
+						<span class="text-label-sm font-label-sm text-on-surface-variant">Phân hệ Quản lý Đào tạo</span>
+					</div>
+					<h1 class="text-headline-lg font-headline-lg text-on-surface">Quản lý khóa học &amp; Giảng dạy</h1>
+					<p class="text-body-md font-body-md text-on-surface-variant max-w-3xl mt-1">
+						Quản lý nội dung học phần, theo dõi sinh viên, tạo khóa học mới và cập nhật tài liệu đào tạo
+						theo tiêu chuẩn kiểm định giáo dục.
+					</p>
+				</div>
+				<!-- Major Action Buttons -->
+				<div class="flex flex-wrap items-center gap-2.5">
+					<button
+						class="px-3.5 py-2 text-title-sm font-title-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-low transition-colors duration-150 flex items-center gap-2 shadow-sm">
+						<span class="material-symbols-outlined text-lg">upload_file</span>
+						<span>Nhập dữ liệu sinh viên (Excel/CSV)</span>
+					</button>
+					<button
+						class="px-3.5 py-2 text-title-sm font-title-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-low transition-colors duration-150 flex items-center gap-2 shadow-sm">
+						<span class="material-symbols-outlined text-lg">download</span>
+						<span>Xuất báo cáo tổng kết kỳ</span>
+					</button>
+					<button
+						class="px-4 py-2 text-title-sm font-title-sm bg-primary text-on-primary rounded-lg hover:bg-primary-container transition-all duration-150 flex items-center gap-2 shadow-sm"
+						onclick="toggleModal(true)">
+						<span class="material-symbols-outlined text-lg">add</span>
+						<span>+ Thêm khóa học mới</span>
+					</button>
+				</div>
+			</div>
+			<!-- Instructor Overview KPI Stat Grid -->
+			<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+				<!-- KPI 1 -->
+				<div
+					class="bg-surface-container-lowest border border-outline-variant/70 rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:border-secondary/60 transition-all">
+					<div class="flex items-center justify-between">
+						<span class="text-label-md font-label-md text-on-surface-variant">Khóa học đang giảng dạy</span>
+						<div
+							class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+							<span class="material-symbols-outlined text-xl">auto_stories</span>
+						</div>
+					</div>
+					<div class="mt-3">
+						<div class="flex items-baseline gap-2">
+							<span class="text-headline-lg font-headline-lg text-on-surface">4</span>
+							<span class="text-title-sm font-title-sm text-on-surface-variant font-normal">khóa
+								học</span>
+						</div>
+						<p class="text-label-sm font-label-sm text-on-surface-variant mt-1 flex items-center gap-1">
+							<span class="text-emerald-700 font-semibold flex items-center"><span
+									class="material-symbols-outlined text-xs">arrow_upward</span> 100%</span>
+							<span>kế hoạch giảng dạy kỳ 1</span>
+						</p>
+					</div>
+				</div>
+				<!-- KPI 2 -->
+				<div
+					class="bg-surface-container-lowest border border-outline-variant/70 rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:border-secondary/60 transition-all">
+					<div class="flex items-center justify-between">
+						<span class="text-label-md font-label-md text-on-surface-variant">Tổng số sinh viên</span>
+						<div
+							class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+							<span class="material-symbols-outlined text-xl">groups</span>
+						</div>
+					</div>
+					<div class="mt-3">
+						<div class="flex items-baseline gap-2">
+							<span class="text-headline-lg font-headline-lg text-on-surface">248</span>
+							<span class="text-title-sm font-title-sm text-on-surface-variant font-normal">sinh
+								viên</span>
+						</div>
+						<p class="text-label-sm font-label-sm text-on-surface-variant mt-1 flex items-center gap-1">
+							<span class="text-secondary font-semibold">4 lớp học phần</span>
+							<span>đã hoàn tất ghi danh</span>
+						</p>
+					</div>
+				</div>
+				<!-- KPI 3 -->
+				<div
+					class="bg-surface-container-lowest border border-amber-200 rounded-xl p-space-md flex flex-col justify-between shadow-sm bg-gradient-to-br from-amber-50/40 to-surface-container-lowest">
+					<div class="flex items-center justify-between">
+						<span class="text-label-md font-label-md text-amber-900 font-semibold">Bài tập chờ chấm
+							điểm</span>
+						<div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center text-amber-800">
+							<span class="material-symbols-outlined text-xl">assignment_late</span>
+						</div>
+					</div>
+					<div class="mt-3">
+						<div class="flex items-baseline gap-2">
+							<span class="text-headline-lg font-headline-lg text-amber-900">18</span>
+							<span class="text-title-sm font-title-sm text-amber-800 font-normal">bài mới nộp</span>
+						</div>
+						<p class="text-label-sm font-label-sm text-amber-700 mt-1 flex items-center gap-1">
+							<span class="material-symbols-outlined text-xs">timer</span>
+							<span>6 bài cần duyệt trước 23:59 hôm nay</span>
+						</p>
+					</div>
+				</div>
+				<!-- KPI 4 -->
+				<div
+					class="bg-surface-container-lowest border border-outline-variant/70 rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:border-secondary/60 transition-all">
+					<div class="flex items-center justify-between">
+						<span class="text-label-md font-label-md text-on-surface-variant">Tỷ lệ SV hoàn thành đúng
+							hạn</span>
+						<div class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700">
+							<span class="material-symbols-outlined text-xl">verified</span>
+						</div>
+					</div>
+					<div class="mt-3">
+						<div class="flex items-baseline gap-2">
+							<span class="text-headline-lg font-headline-lg text-emerald-800">88.5%</span>
+							<span class="text-label-md font-label-md text-emerald-700 font-semibold">(+3.2% vs
+								K23)</span>
+						</div>
+						<div class="w-full bg-surface-container-high rounded-full h-1.5 mt-2">
+							<div class="bg-emerald-600 h-1.5 rounded-full" style="width: 88.5%"></div>
+						</div>
+					</div>
+				</div>
+			</section>
+			<!-- Main Layout: Dual-panel with Course Table + Urgent Tasks Rail -->
+			<div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+				<!-- Left 3 Columns: Course Management CRUD Table with Filters -->
+				<section class="xl:col-span-3 space-y-4">
+					<div
+						class="bg-surface-container-lowest border border-outline-variant/70 rounded-xl shadow-sm overflow-hidden">
+						<!-- Table Header & Toolbar Filter -->
+						<div
+							class="p-space-md border-b border-outline-variant/40 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-surface-bright">
+							<div>
+								<h2 class="text-headline-sm font-headline-sm text-on-surface">Danh sách học phần quản
+									trị</h2>
+								<p class="text-body-sm font-body-sm text-on-surface-variant">Toàn quyền cập nhật đề
+									cương, tài nguyên, đề kiểm tra và quản lý điểm số.</p>
+							</div>
+							<!-- Filter Cluster -->
+							<div class="flex flex-wrap items-center gap-2">
+								<!-- Search -->
+								<div class="relative">
+									<span
+										class="material-symbols-outlined absolute left-2.5 top-2 text-outline text-sm">filter_list</span>
+									<input
+										class="pl-8 pr-3 py-1.5 text-body-sm font-body-sm bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:ring-1 focus:ring-secondary w-52"
+										id="courseFilterInput" onkeyup="filterCourses()"
+										placeholder="Tìm theo tên / mã môn..." type="text" />
+								</div>
+								<!-- Semester Select -->
+								<select
+									class="py-1.5 px-3 text-body-sm font-body-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:ring-1 focus:ring-secondary">
+									<option>HK1 (2024-2025)</option>
+									<option>HK2 (2023-2024)</option>
+									<option>HK Hè 2024</option>
+									<option>Tất cả học kỳ</option>
+								</select>
+								<!-- Status Filter Select -->
+								<select
+									class="py-1.5 px-3 text-body-sm font-body-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:ring-1 focus:ring-secondary">
+									<option value="all">Tất cả trạng thái</option>
+									<option value="published">Đang mở (Published)</option>
+									<option value="draft">Bản nháp (Draft)</option>
+									<option value="upcoming">Chuẩn bị mở</option>
+									<option value="archived">Đã lưu trữ</option>
+								</select>
+								<!-- View Mode / Bulk Action -->
+								<button
+									class="p-1.5 border border-outline-variant bg-surface-container-lowest rounded-lg text-on-surface-variant hover:text-on-surface"
+									title="Tải lại bảng">
+									<span class="material-symbols-outlined text-base">refresh</span>
+								</button>
+							</div>
+						</div>
+						<!-- Table Container -->
+						<div class="overflow-x-auto">
+							<table class="w-full text-left border-collapse" id="courseTable">
+								<thead>
+									<tr
+										class="bg-surface-bright border-b border-outline-variant text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">
+										<th class="py-3.5 px-4 font-semibold">Mã môn &amp; Tên khóa học</th>
+										<th class="py-3.5 px-4 font-semibold">Học kỳ &amp; Tín chỉ</th>
+										<th class="py-3.5 px-4 font-semibold">Sức chứa &amp; Sinh viên</th>
+										<th class="py-3.5 px-4 font-semibold">Trạng thái</th>
+										<th class="py-3.5 px-4 font-semibold">Tiến độ giảng dạy</th>
+										<th class="py-3.5 px-4 font-semibold text-right">Tác vụ nhanh</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-outline-variant/30 text-body-sm font-body-sm">
+									<!-- Course Row 1 -->
+									<tr class="hover:bg-surface-container-low/50 transition-colors duration-100 group">
+										<td class="py-3.5 px-4">
+											<div class="flex items-center gap-3">
+												<div
+													class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/60 overflow-hidden shrink-0">
+													<img class="w-full h-full object-cover"
+														data-alt="Modern technical digital illustration representing algorithms and abstract binary data trees in collegiate navy blue and light azure tones, cleanly formatted for university course preview thumbnail."
+														src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKNHAjoUcgKn5V7OH_i0MpeVuS_reak4m2G-mOvCNwo82DSOP6CL7_WQqj-2HImnJQ4fp7IiXW-mzQ9XCG7QOcDBKxhg-WMa6H_ShCKT1xTgNfSHx9Li_owNIwwcCTFLwYD2__gK0TBf8yWUlpipJIxL7dK8xWie0aL9mXZPqHiAnu5ncEOdQmRPyQNH1CZt8BI4PkZHy4Yi5m0y3vEpV6uT1-3i17BEWhn6MZeQA7lnogF3lLx-8OtA" />
+												</div>
+												<div>
+													<span
+														class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary font-bold">CS102</span>
+													<h3
+														class="text-title-sm font-title-sm text-on-surface group-hover:text-secondary transition-colors mt-0.5">
+														Cấu trúc dữ liệu &amp; Giải thuật</h3>
+													<p class="text-body-sm font-body-sm text-on-surface-variant">Lớp:
+														CS102.O11 • Phòng: A2-304</p>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4 text-on-surface-variant">
+											<span class="font-medium text-on-surface">HK1 2024-2025</span>
+											<p class="text-body-sm">3 Tín chỉ (30T LT - 30T TH)</p>
+										</td>
+										<td class="py-3.5 px-4">
+											<div class="space-y-1">
+												<div class="flex justify-between text-label-sm">
+													<span class="font-semibold text-on-surface">78/80 SV</span>
+													<span class="text-emerald-700 font-medium">97.5% Đủ chỗ</span>
+												</div>
+												<div class="w-32 bg-surface-container-high rounded-full h-1.5">
+													<div class="bg-secondary h-1.5 rounded-full" style="width: 97.5%">
+													</div>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4">
+											<span
+												class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-label-sm font-label-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
+												<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+												Đang mở / Published
+											</span>
+										</td>
+										<td class="py-3.5 px-4">
+											<span class="font-semibold text-on-surface">Tuần 8/15</span>
+											<p class="text-body-sm text-on-surface-variant">Cập nhật: 12 phút trước</p>
+										</td>
+										<td class="py-3.5 px-4 text-right">
+											<div class="inline-flex items-center gap-1">
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													onclick="editCourse('CS102', 'Cấu trúc dữ liệu &amp; Giải thuật', 3)"
+													title="Chỉnh sửa (Edit)">
+													<span class="material-symbols-outlined text-lg">edit</span>
+												</button>
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													title="Quản lý sinh viên &amp; Điểm số">
+													<span class="material-symbols-outlined text-lg">fact_check</span>
+												</button>
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													title="Thêm bài giảng/Module">
+													<span class="material-symbols-outlined text-lg">post_add</span>
+												</button>
+												<div class="relative inline-block text-left">
+													<button
+														class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded"
+														title="Tác vụ khác">
+														<span class="material-symbols-outlined text-lg">more_vert</span>
+													</button>
+												</div>
+											</div>
+										</td>
+									</tr>
+									<!-- Course Row 2 -->
+									<tr class="hover:bg-surface-container-low/50 transition-colors duration-100 group">
+										<td class="py-3.5 px-4">
+											<div class="flex items-center gap-3">
+												<div
+													class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/60 overflow-hidden shrink-0">
+													<img class="w-full h-full object-cover"
+														data-alt="Sophisticated web development and cloud code interface abstract artwork in deep slate and crisp cyan accents, with modern academic editorial atmosphere."
+														src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdyrdfb62IIjPHQI3JroryyiGmkp5X2-QxBrPCgzzR9R_Fj65tNCuz_CnqX9Z95lhlW_3EqRYvkLMb7ANRuWuCI48OW5QJn-jVi-xpI0UjCCd3jiQn-MW-fHuEBx9l3J-8nr0B0cvnmVB1upcNkc-INqRO_Z_Ha6G0D4JtyErI1-cO-HxDIRedB8xpLz9g1qtIWai8ib3l_qLgdeLl-NtnSttybxaGdUT7Un3Ht2aP0FNAF8T9plj9iA" />
+												</div>
+												<div>
+													<span
+														class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary font-bold">IT3011</span>
+													<h3
+														class="text-title-sm font-title-sm text-on-surface group-hover:text-secondary transition-colors mt-0.5">
+														Phát triển Web nâng cao</h3>
+													<p class="text-body-sm font-body-sm text-on-surface-variant">Lớp:
+														IT3011.CL1 • Phòng: Lab 502</p>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4 text-on-surface-variant">
+											<span class="font-medium text-on-surface">HK1 2024-2025</span>
+											<p class="text-body-sm">4 Tín chỉ (30T LT - 60T TH)</p>
+										</td>
+										<td class="py-3.5 px-4">
+											<div class="space-y-1">
+												<div class="flex justify-between text-label-sm">
+													<span class="font-semibold text-on-surface">65/70 SV</span>
+													<span class="text-secondary font-medium">92.8% Đủ chỗ</span>
+												</div>
+												<div class="w-32 bg-surface-container-high rounded-full h-1.5">
+													<div class="bg-secondary h-1.5 rounded-full" style="width: 92.8%">
+													</div>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4">
+											<span
+												class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-label-sm font-label-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
+												<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+												Đang mở / Published
+											</span>
+										</td>
+										<td class="py-3.5 px-4">
+											<span class="font-semibold text-on-surface">Tuần 8/15</span>
+											<p class="text-body-sm text-on-surface-variant">Cập nhật: 2 giờ trước</p>
+										</td>
+										<td class="py-3.5 px-4 text-right">
+											<div class="inline-flex items-center gap-1">
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													onclick="editCourse('IT3011', 'Phát triển Web nâng cao', 4)"
+													title="Chỉnh sửa (Edit)">
+													<span class="material-symbols-outlined text-lg">edit</span>
+												</button>
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													title="Quản lý sinh viên &amp; Điểm số">
+													<span class="material-symbols-outlined text-lg">fact_check</span>
+												</button>
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													title="Thêm bài giảng/Module">
+													<span class="material-symbols-outlined text-lg">post_add</span>
+												</button>
+												<div class="relative inline-block text-left">
+													<button
+														class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded"
+														title="Tác vụ khác">
+														<span class="material-symbols-outlined text-lg">more_vert</span>
+													</button>
+												</div>
+											</div>
+										</td>
+									</tr>
+									<!-- Course Row 3 -->
+									<tr class="hover:bg-surface-container-low/50 transition-colors duration-100 group">
+										<td class="py-3.5 px-4">
+											<div class="flex items-center gap-3">
+												<div
+													class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/60 overflow-hidden shrink-0">
+													<img class="w-full h-full object-cover"
+														data-alt="Minimalist academic rendering of neural network lattices and machine learning mathematics graphs in clean high-contrast black, white, and subtle blue lighting."
+														src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbwarIZf-bI_OvPfofMxapqjiv40lRAQkcIeeRcte8LoNiKVykHWa6bjK-jXASbHzrW14qrl43vsKDDZsuxqxdiiX5uihzNvowQ7zOr6aFmC4h8WXLHvhb7lp37nkBhvWk34EcGFnX76-Zs5v8QI07FXwm179GPWX05UjzBZczlly33-jQwVkmN8mPzxDA9aHu5py4mG6HU1JtoH5-iRDlEmcn8DGw8rlkrEdoRNGu1Fb1OgRRndbeTA" />
+												</div>
+												<div>
+													<span
+														class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary font-bold">AI2040</span>
+													<h3
+														class="text-title-sm font-title-sm text-on-surface group-hover:text-secondary transition-colors mt-0.5">
+														Nhập môn Trí tuệ Nhân tạo</h3>
+													<p class="text-body-sm font-body-sm text-on-surface-variant">Lớp:
+														AI2040.CLC • Giảng đường C1</p>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4 text-on-surface-variant">
+											<span class="font-medium text-on-surface">HK1 2024-2025</span>
+											<p class="text-body-sm">3 Tín chỉ (45T LT)</p>
+										</td>
+										<td class="py-3.5 px-4">
+											<div class="space-y-1">
+												<div class="flex justify-between text-label-sm">
+													<span class="font-semibold text-on-surface">60/60 SV</span>
+													<span class="text-amber-700 font-medium">Đã hết chỗ</span>
+												</div>
+												<div class="w-32 bg-surface-container-high rounded-full h-1.5">
+													<div class="bg-amber-600 h-1.5 rounded-full" style="width: 100%">
+													</div>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4">
+											<span
+												class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-label-sm font-label-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
+												<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+												Đang mở / Published
+											</span>
+										</td>
+										<td class="py-3.5 px-4">
+											<span class="font-semibold text-on-surface">Tuần 8/15</span>
+											<p class="text-body-sm text-on-surface-variant">Cập nhật: Hôm qua</p>
+										</td>
+										<td class="py-3.5 px-4 text-right">
+											<div class="inline-flex items-center gap-1">
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													onclick="editCourse('AI2040', 'Nhập môn Trí tuệ Nhân tạo', 3)"
+													title="Chỉnh sửa (Edit)">
+													<span class="material-symbols-outlined text-lg">edit</span>
+												</button>
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													title="Quản lý sinh viên &amp; Điểm số">
+													<span class="material-symbols-outlined text-lg">fact_check</span>
+												</button>
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													title="Thêm bài giảng/Module">
+													<span class="material-symbols-outlined text-lg">post_add</span>
+												</button>
+												<div class="relative inline-block text-left">
+													<button
+														class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded"
+														title="Tác vụ khác">
+														<span class="material-symbols-outlined text-lg">more_vert</span>
+													</button>
+												</div>
+											</div>
+										</td>
+									</tr>
+									<!-- Course Row 4 (Draft / Bản nháp) -->
+									<tr
+										class="hover:bg-surface-container-low/50 transition-colors duration-100 group bg-amber-50/20">
+										<td class="py-3.5 px-4">
+											<div class="flex items-center gap-3">
+												<div
+													class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-dashed border-amber-300 overflow-hidden shrink-0">
+													<span
+														class="material-symbols-outlined text-amber-700 text-2xl">science</span>
+												</div>
+												<div>
+													<span
+														class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">SE4002</span>
+													<h3
+														class="text-title-sm font-title-sm text-on-surface group-hover:text-secondary transition-colors mt-0.5">
+														Kiểm thử phần mềm tự động &amp; DevOps</h3>
+													<p class="text-body-sm font-body-sm text-on-surface-variant">Chuyên
+														đề học phần nâng cao K21</p>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4 text-on-surface-variant">
+											<span class="font-medium text-on-surface">HK2 (Dự kiến)</span>
+											<p class="text-body-sm">3 Tín chỉ</p>
+										</td>
+										<td class="py-3.5 px-4">
+											<span class="text-label-sm text-on-surface-variant italic">Chưa mở ghi
+												danh</span>
+										</td>
+										<td class="py-3.5 px-4">
+											<span
+												class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-label-sm font-label-sm bg-amber-50 text-amber-900 border border-amber-300">
+												<span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+												Bản nháp / Draft
+											</span>
+										</td>
+										<td class="py-3.5 px-4">
+											<span class="font-semibold text-on-surface-variant">Đề cương 60%</span>
+											<p class="text-body-sm text-on-surface-variant">Sửa đổi: 3 ngày trước</p>
+										</td>
+										<td class="py-3.5 px-4 text-right">
+											<div class="inline-flex items-center gap-1">
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													onclick="editCourse('SE4002', 'Kiểm thử phần mềm tự động &amp; DevOps', 3)"
+													title="Chỉnh sửa (Edit)">
+													<span class="material-symbols-outlined text-lg">edit</span>
+												</button>
+												<button class="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded"
+													title="Phê duyệt &amp; Đăng tải (Publish)">
+													<span class="material-symbols-outlined text-lg">publish</span>
+												</button>
+												<button class="p-1.5 text-error hover:bg-error-container/30 rounded"
+													title="Xóa bản nháp">
+													<span class="material-symbols-outlined text-lg">delete</span>
+												</button>
+											</div>
+										</td>
+									</tr>
+									<!-- Course Row 5 (Upcoming / Chuẩn bị mở) -->
+									<tr class="hover:bg-surface-container-low/50 transition-colors duration-100 group">
+										<td class="py-3.5 px-4">
+											<div class="flex items-center gap-3">
+												<div
+													class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/60 overflow-hidden shrink-0">
+													<img class="w-full h-full object-cover"
+														data-alt="High-end collegiate visual illustration of computer network servers and cryptographic key security in deep blue corporate style."
+														src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8xtIPRTZEbQGI1ql6rqIu9Y5mp2lxjQCvcEMrWf3gs0nO_tPIm7-nykKTFA4wn8EPz3rltAEhP4-9NnYXbDFK4g47_-Z5k4dpcKhK2OvYOe719jvsubYROmCgb6vtEapedswFUBqe-UAtiJBM_-v0ghZxFU_B42cm7C7sRw4-qwMHJZzqdI417-Db5nNNQ-Gr31q25B-Ww7Oq3nxUQeyBkVZZ37KinzJYMfiUt80ZFs0tZjqZcGYZKQ" />
+												</div>
+												<div>
+													<span
+														class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary font-bold">NET201</span>
+													<h3
+														class="text-title-sm font-title-sm text-on-surface group-hover:text-secondary transition-colors mt-0.5">
+														An toàn &amp; Bảo mật Mạng máy tính</h3>
+													<p class="text-body-sm font-body-sm text-on-surface-variant">Lớp:
+														NET201.N01 • Phòng: B1-101</p>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4 text-on-surface-variant">
+											<span class="font-medium text-on-surface">HK1 Đợt 2</span>
+											<p class="text-body-sm">3 Tín chỉ</p>
+										</td>
+										<td class="py-3.5 px-4">
+											<div class="space-y-1">
+												<div class="flex justify-between text-label-sm">
+													<span class="font-semibold text-on-surface">45/50 SV</span>
+													<span class="text-secondary font-medium">90%</span>
+												</div>
+												<div class="w-32 bg-surface-container-high rounded-full h-1.5">
+													<div class="bg-secondary h-1.5 rounded-full" style="width: 90%">
+													</div>
+												</div>
+											</div>
+										</td>
+										<td class="py-3.5 px-4">
+											<span
+												class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-label-sm font-label-sm bg-purple-50 text-purple-900 border border-purple-200">
+												<span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+												Chuẩn bị mở
+											</span>
+										</td>
+										<td class="py-3.5 px-4">
+											<span class="font-semibold text-on-surface">Khai giảng: 15/11</span>
+											<p class="text-body-sm text-on-surface-variant">Giáo trình đã duyệt</p>
+										</td>
+										<td class="py-3.5 px-4 text-right">
+											<div class="inline-flex items-center gap-1">
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													onclick="editCourse('NET201', 'An toàn &amp; Bảo mật Mạng máy tính', 3)"
+													title="Chỉnh sửa (Edit)">
+													<span class="material-symbols-outlined text-lg">edit</span>
+												</button>
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded"
+													title="Quản lý sinh viên &amp; Điểm số">
+													<span class="material-symbols-outlined text-lg">fact_check</span>
+												</button>
+												<button
+													class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded"
+													title="Tác vụ khác">
+													<span class="material-symbols-outlined text-lg">more_vert</span>
+												</button>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!-- Table Pagination & Selection Summary -->
+						<div
+							class="p-space-md border-t border-outline-variant/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-body-sm font-body-sm bg-surface-bright">
+							<span class="text-on-surface-variant">Hiển thị <strong>1 - 5</strong> trong tổng số
+								<strong>12</strong> học phần giảng dạy</span>
+							<div class="flex items-center gap-1">
+								<button
+									class="px-2.5 py-1 border border-outline-variant rounded bg-surface-container-lowest text-on-surface-variant disabled:opacity-40"
+									disabled="">Trước</button>
+								<button
+									class="px-3 py-1 border border-secondary bg-surface-container-low text-secondary font-bold rounded">1</button>
+								<button
+									class="px-3 py-1 border border-outline-variant rounded bg-surface-container-lowest text-on-surface hover:bg-surface-container-low">2</button>
+								<button
+									class="px-3 py-1 border border-outline-variant rounded bg-surface-container-lowest text-on-surface hover:bg-surface-container-low">3</button>
+								<button
+									class="px-2.5 py-1 border border-outline-variant rounded bg-surface-container-lowest text-on-surface-variant hover:text-on-surface">Sau</button>
+							</div>
+						</div>
+					</div>
+					<!-- Academic Policy / Accreditation Compliance Alert -->
+					<div
+						class="p-4 rounded-xl border border-sky-200 bg-gradient-to-r from-sky-50 via-surface-container-lowest to-surface-bright flex items-start gap-3 shadow-sm">
+						<span
+							class="material-symbols-outlined text-secondary text-2xl shrink-0 mt-0.5">verified_user</span>
+						<div class="space-y-1">
+							<h4 class="text-title-sm font-title-sm text-on-surface font-semibold">Thông báo Kiểm định
+								Chất lượng Giáo dục (AUN-QA)</h4>
+							<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">
+								Đề cương chi tiết học phần và ma trận chuẩn đầu ra (CLO/PLO) cho các khóa HK1 cần được
+								khóa chỉnh sửa trước ngày <strong>20/11/2024</strong>. Giảng viên vui lòng kiểm tra việc
+								đồng bộ thang điểm chữ và trọng số trắc nghiệm.
+							</p>
+						</div>
+					</div>
+				</section>
+				<!-- Right 1 Column: Instructor Action Required & Forum Queue -->
+				<aside class="space-y-6">
+					<!-- AI Assistant Telemetry Widget (Design System Accent) -->
+					<div
+						class="p- space-md p-4 rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50/70 to-surface-container-lowest shadow-sm space-y-3">
+						<div class="flex items-center justify-between">
+							<div class="flex items-center gap-2">
+								<span class="material-symbols-outlined text-secondary text-lg"
+									style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+								<span class="text-title-sm font-title-sm text-on-surface font-bold">AI Teaching
+									Assistant</span>
+							</div>
+							<span
+								class="text-label-sm font-label-sm text-secondary bg-sky-100/70 px-2 py-0.5 rounded font-semibold">Tự
+								động hóa</span>
+						</div>
+						<p class="font-headline-sm text-sm italic text-on-surface leading-snug">
+							"14 sinh viên lớp Cấu trúc dữ liệu đang gặp khó khăn ở chương Đồ thị &amp; Dijkstra."
+						</p>
+						<div
+							class="text-label-sm font-label-sm text-on-surface-variant space-y-1.5 pt-1 border-t border-sky-100">
+							<div class="flex justify-between">
+								<span>Độ trễ phản hồi diễn đàn:</span>
+								<span class="font-semibold text-emerald-700">1.8 giờ (Tốt)</span>
+							</div>
+							<div class="flex justify-between">
+								<span>Đề xuất:</span>
+								<span class="font-semibold text-secondary">Tổ chức 1 buổi Q&amp;A trực tuyến</span>
+							</div>
+						</div>
+						<button
+							class="w-full py-1.5 bg-secondary text-on-secondary rounded-lg text-label-md font-label-md hover:bg-on-secondary-container transition-colors font-medium">
+							Xem báo cáo học tập AI
+						</button>
+					</div>
+					<!-- Section: Việc cần làm ngay (To-Do & Grading Queue) -->
+					<div
+						class="bg-surface-container-lowest border border-outline-variant/70 rounded-xl p-space-md shadow-sm space-y-4">
+						<div class="flex items-center justify-between pb-2 border-b border-outline-variant/40">
+							<div class="flex items-center gap-2">
+								<span class="material-symbols-outlined text-amber-600 text-xl">pending_actions</span>
+								<h3 class="text-title-md font-title-md text-on-surface font-semibold">Việc cần làm ngay
+								</h3>
+							</div>
+							<span
+								class="w-5 h-5 rounded-full bg-error text-on-error text-[11px] font-bold flex items-center justify-center">3</span>
+						</div>
+						<!-- Urgent List Item 1 -->
+						<div class="p-3 rounded-lg border border-amber-200 bg-amber-50/40 space-y-2">
+							<div class="flex items-start justify-between">
+								<span
+									class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Chấm
+									bài Giữa kỳ</span>
+								<span
+									class="text-label-sm font-label-sm text-error font-semibold flex items-center gap-0.5">
+									<span class="material-symbols-outlined text-xs">schedule</span> Hôm nay
+								</span>
+							</div>
+							<p class="text-title-sm font-title-sm text-on-surface font-semibold leading-tight">CS102:
+								Bài kiểm tra Cây nhị phân tìm kiếm (BST)</p>
+							<div
+								class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+								<span>12 bài chưa chấm</span>
+								<button class="text-secondary font-semibold hover:underline flex items-center gap-0.5">
+									Chấm ngay <span class="material-symbols-outlined text-sm">arrow_forward</span>
+								</button>
+							</div>
+						</div>
+						<!-- Urgent List Item 2 -->
+						<div class="p-3 rounded-lg border border-outline-variant/60 bg-surface-bright space-y-2">
+							<div class="flex items-start justify-between">
+								<span
+									class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary font-bold">Đồ
+									án môn học</span>
+								<span class="text-label-sm font-label-sm text-on-surface-variant font-medium">Còn 2
+									ngày</span>
+							</div>
+							<p class="text-title-sm font-title-sm text-on-surface font-semibold leading-tight">IT3011:
+								Đề cương dự án Web Fullstack Node.js</p>
+							<div
+								class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+								<span>6 nhóm nộp đề tài</span>
+								<button class="text-secondary font-semibold hover:underline flex items-center gap-0.5">
+									Duyệt đề cương <span class="material-symbols-outlined text-sm">arrow_forward</span>
+								</button>
+							</div>
+						</div>
+						<!-- Urgent List Item 3 -->
+						<div class="p-3 rounded-lg border border-outline-variant/60 bg-surface-bright space-y-2">
+							<div class="flex items-start justify-between">
+								<span
+									class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface font-bold">Diễn
+									đàn Q&amp;A</span>
+								<span class="text-label-sm font-label-sm text-on-surface-variant font-medium">3 câu hỏi
+									mới</span>
+							</div>
+							<p class="text-title-sm font-title-sm text-on-surface font-semibold leading-tight">AI2040:
+								Thắc mắc về thuật toán Minimax &amp; Alpha-Beta Cutoff</p>
+							<div
+								class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+								<span>SV: Nguyễn Hoàng Nam</span>
+								<button class="text-secondary font-semibold hover:underline flex items-center gap-0.5">
+									Phản hồi <span class="material-symbols-outlined text-sm">reply</span>
+								</button>
+							</div>
+						</div>
+					</div>
+					<!-- Quick Link: Teaching Schedule Calendar -->
+					<div
+						class="bg-surface-container-lowest border border-outline-variant/70 rounded-xl p-space-md shadow-sm space-y-3">
+						<div class="flex items-center justify-between">
+							<h3 class="text-title-md font-title-md text-on-surface font-semibold">Lịch dạy sắp tới</h3>
+							<a class="text-label-sm font-label-sm text-secondary hover:underline" href="#">Chi tiết</a>
+						</div>
+						<div class="space-y-2.5">
+							<div
+								class="flex items-center gap-3 p-2 rounded-lg bg-surface-bright border border-outline-variant/40">
+								<div
+									class="text-center px-2 py-1 bg-surface-container rounded text-on-surface shrink-0">
+									<span class="text-label-sm font-bold block">T4</span>
+									<span class="text-xs text-on-surface-variant">08/11</span>
+								</div>
+								<div>
+									<p class="text-label-md font-semibold text-on-surface">Tiết 1-3 • CS102 (Phòng
+										A2-304)</p>
+									<p class="text-body-sm text-on-surface-variant">Chủ đề: Đồ thị &amp; Thuật toán
+										duyệt BFS/DFS</p>
+								</div>
+							</div>
+							<div
+								class="flex items-center gap-3 p-2 rounded-lg bg-surface-bright border border-outline-variant/40">
+								<div
+									class="text-center px-2 py-1 bg-surface-container rounded text-on-surface shrink-0">
+									<span class="text-label-sm font-bold block">T6</span>
+									<span class="text-xs text-on-surface-variant">10/11</span>
+								</div>
+								<div>
+									<p class="text-label-md font-semibold text-on-surface">Tiết 7-9 • IT3011 (Lab 502)
+									</p>
+									<p class="text-body-sm text-on-surface-variant">Thực hành: Xây dựng RESTful API với
+										Express</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</aside>
+			</div>
+		</main>
+	</div>
+	<!-- ================= MODAL / PANEL NỔI MẪU: TẠO & CHỈNH SỬA KHÓA HỌC ================= -->
+	<div class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+		id="courseModal">
+		<div
+			class="bg-surface-container-lowest rounded-xl max-w-2xl w-full max-h-[921px] flex flex-col shadow-2xl border border-outline-variant overflow-hidden animate-in fade-in zoom-in duration-200">
+			<!-- Modal Header -->
+			<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-bright">
+				<div class="flex items-center gap-2.5">
+					<div class="w-8 h-8 rounded-lg bg-secondary text-on-secondary flex items-center justify-center">
+						<span class="material-symbols-outlined text-lg">school</span>
+					</div>
+					<div>
+						<h3 class="text-headline-sm font-headline-sm text-on-surface" id="modalTitle">Thêm khóa học /
+							Học phần mới</h3>
+						<p class="text-body-sm font-body-sm text-on-surface-variant">Khởi tạo dữ liệu lớp học phần theo
+							tiêu chuẩn đào tạo số tín chỉ</p>
+					</div>
+				</div>
+				<button
+					class="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
+					onclick="toggleModal(false)">
+					<span class="material-symbols-outlined text-xl">close</span>
+				</button>
+			</div>
+			<!-- Modal Body (Scrollable Form) -->
+			<form class="p-6 overflow-y-auto space-y-4 text-body-md font-body-md flex-1" id="courseForm"
+				onsubmit="saveCourse(event)">
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<!-- Mã học phần -->
+					<div class="space-y-1">
+						<label class="text-label-md font-label-md font-semibold text-on-surface">Mã môn học <span
+								class="text-error">*</span></label>
+						<input
+							class="w-full px-3 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none"
+							id="courseCode" placeholder="vd: CS201" required="" type="text" />
+					</div>
+					<!-- Tên khóa học -->
+					<div class="md:col-span-2 space-y-1">
+						<label class="text-label-md font-label-md font-semibold text-on-surface">Tên khóa học / Học phần
+							<span class="text-error">*</span></label>
+						<input
+							class="w-full px-3 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none"
+							id="courseTitle" placeholder="vd: Cơ sở Dữ liệu &amp; Hệ quản trị SQL" required=""
+							type="text" />
+					</div>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<!-- Số tín chỉ -->
+					<div class="space-y-1">
+						<label class="text-label-md font-label-md font-semibold text-on-surface">Số tín chỉ <span
+								class="text-error">*</span></label>
+						<select
+							class="w-full px-3 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none"
+							id="courseCredits">
+							<option value="2">2 Tín chỉ</option>
+							<option selected="" value="3">3 Tín chỉ</option>
+							<option value="4">4 Tín chỉ</option>
+							<option value="1">1 Tín chỉ (Thực tập)</option>
+						</select>
+					</div>
+					<!-- Khoa / Bộ môn -->
+					<div class="space-y-1">
+						<label class="text-label-md font-label-md font-semibold text-on-surface">Khoa / Bộ môn</label>
+						<select
+							class="w-full px-3 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none">
+							<option>Công nghệ Phần mềm</option>
+							<option>Hệ thống Thông tin</option>
+							<option>Khoa học Máy tính</option>
+							<option>Mạng máy tính &amp; Viễn thông</option>
+						</select>
+					</div>
+					<!-- Học kỳ áp dụng -->
+					<div class="space-y-1">
+						<label class="text-label-md font-label-md font-semibold text-on-surface">Học kỳ</label>
+						<select
+							class="w-full px-3 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none">
+							<option>Học kỳ 1 (2024-2025)</option>
+							<option>Học kỳ 2 (2024-2025)</option>
+							<option>Học kỳ Hè 2025</option>
+						</select>
+					</div>
+				</div>
+				<!-- Giảng viên phụ trách / Trợ giảng -->
+				<div class="space-y-1">
+					<label class="text-label-md font-label-md font-semibold text-on-surface">Giảng viên trợ giảng
+						(Teaching Assistant - TA)</label>
+					<input
+						class="w-full px-3 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none"
+						placeholder="Nhập email hoặc mã cán bộ (vd: ta.nguyenvana@university.edu.vn)" type="text" />
+				</div>
+				<!-- Mô tả tóm tắt học phần -->
+				<div class="space-y-1">
+					<label class="text-label-md font-label-md font-semibold text-on-surface">Mô tả tóm tắt &amp; Chuẩn
+						đầu ra (Syllabus summary)</label>
+					<textarea
+						class="w-full px-3 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none text-body-sm"
+						placeholder="Mô tả mục tiêu môn học, kiến thức cốt lõi và các kỹ năng đạt được sau khi hoàn thành..."
+						rows="3"></textarea>
+				</div>
+				<!-- Ảnh bìa học phần (Course Cover Thumbnail) -->
+				<div class="space-y-1">
+					<label class="text-label-md font-label-md font-semibold text-on-surface">Ảnh bìa học phần</label>
+					<div
+						class="border-2 border-dashed border-outline-variant rounded-lg p-4 text-center bg-surface-bright hover:border-secondary transition-colors cursor-pointer flex flex-col items-center justify-center">
+						<span class="material-symbols-outlined text-3xl text-outline mb-1">add_photo_alternate</span>
+						<span class="text-label-md font-label-md text-secondary font-medium">Kéo thả ảnh hoặc Bấm để tải
+							lên</span>
+						<span class="text-label-sm font-label-sm text-on-surface-variant mt-0.5">Khuyến nghị tỷ lệ 16:9
+							(PNG, JPG tối đa 5MB)</span>
+					</div>
+				</div>
+				<!-- Cài đặt ghi danh & Mật khẩu học phần (Enrollment Key) -->
+				<div class="p-3.5 rounded-lg bg-surface-container-low border border-outline-variant/60 space-y-3">
+					<div class="flex items-center justify-between">
+						<div>
+							<span class="text-title-sm font-title-sm text-on-surface font-semibold block">Mã bảo mật ghi
+								danh (Enrollment Key)</span>
+							<span class="text-label-sm font-label-sm text-on-surface-variant">Chỉ sinh viên có mật khẩu
+								mới có thể tự tham gia học phần</span>
+						</div>
+						<label class="relative inline-flex items-center cursor-pointer">
+							<input checked="" class="sr-only peer" type="checkbox" />
+							<div
+								class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary">
+							</div>
+						</label>
+					</div>
+					<div class="relative">
+						<span
+							class="material-symbols-outlined absolute left-2.5 top-2.5 text-outline text-base">key</span>
+						<input
+							class="w-full pl-9 pr-3 py-1.5 border border-outline-variant rounded-lg bg-surface-container-lowest font-mono text-body-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+							type="text" value="EDULMS-2024-K24" />
+					</div>
+				</div>
+			</form>
+			<!-- Modal Footer Action Buttons -->
+			<div class="px-6 py-3 border-t border-outline-variant bg-surface-bright flex items-center justify-between">
+				<button
+					class="px-4 py-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container font-label-md"
+					onclick="toggleModal(false)" type="button">
+					Hủy bỏ
+				</button>
+				<div class="flex items-center gap-2">
+					<button
+						class="px-4 py-2 border border-outline-variant bg-surface-container-lowest rounded-lg text-on-surface hover:bg-surface-container-low font-label-md font-semibold"
+						onclick="saveAsDraft()" type="button">
+						Lưu bản nháp (Draft)
+					</button>
+					<button
+						class="px-5 py-2 bg-primary text-on-primary rounded-lg hover:bg-primary-container font-label-md font-semibold shadow-sm transition-all"
+						onclick="document.getElementById('courseForm').requestSubmit()" type="button">
+						Lưu &amp; Xuất bản (Publish)
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Micro-Interactions Vanilla JavaScript -->
+	<script>
+		function toggleModal(show) {
+			const modal = document.getElementById('courseModal');
+			if (show) {
+				modal.classList.remove('hidden');
+				document.getElementById('modalTitle').textContent = 'Thêm khóa học / Học phần mới';
+				document.getElementById('courseCode').value = '';
+				document.getElementById('courseTitle').value = '';
+			} else {
+				modal.classList.add('hidden');
+			}
+		}
+
+		function editCourse(code, title, credits) {
+			const modal = document.getElementById('courseModal');
+			modal.classList.remove('hidden');
+			document.getElementById('modalTitle').textContent = 'Chỉnh sửa thông tin học phần: ' + code;
+			document.getElementById('courseCode').value = code;
+			document.getElementById('courseTitle').value = title;
+			document.getElementById('courseCredits').value = credits;
+		}
+
+		function saveCourse(event) {
+			event.preventDefault();
+			const code = document.getElementById('courseCode').value;
+			const title = document.getElementById('courseTitle').value;
+			alert(`Đã lưu thành công khóa học: [${code}] ${title}`);
+			toggleModal(false);
+		}
+
+		function saveAsDraft() {
+			const code = document.getElementById('courseCode').value || 'DRAFT-CODE';
+			alert(`Đã lưu bản nháp học phần [${code}]. Bạn có thể xem lại tại mục Bản nháp.`);
+			toggleModal(false);
+		}
+
+		function filterCourses() {
+			const input = document.getElementById('courseFilterInput');
+			const filter = input.value.toLowerCase();
+			const table = document.getElementById('courseTable');
+			const trs = table.getElementsByTagName('tr');
+
+			for (let i = 1; i < trs.length; i++) {
+				const rowText = trs[i].textContent || trs[i].innerText;
+				if (rowText.toLowerCase().indexOf(filter) > -1) {
+					trs[i].style.display = "";
+				} else {
+					trs[i].style.display = "none";
+				}
+			}
+		}
+	</script>
+</body>
+
+</html>
