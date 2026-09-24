@@ -9,6 +9,7 @@ import { useAppTheme } from '@/contexts/theme';
 import { getAntdTheme } from '@/config/antd-theme';
 import AppRoutes from '@/routes';
 import './styles/theme.css';
+import './styles/scrollbar.css';
 
 dayjs.locale('vi');
 

@@ -12,6 +12,9 @@
   Theme M3 của antd nằm ở `src/config/antd-theme/index.ts` và được nạp 1 lần trong `src/App.tsx`
   qua `ConfigProvider`. Muốn đổi màu/bo góc toàn hệ thống → sửa ở đó, **không** sửa trong page.
 - **@tiptap** cho rich text editor.
+- **Scrollbar**: đã style lại toàn cục ở `src/styles/scrollbar.css` (thumb mảnh, màu theo token M3,
+  tự đổi light/dark). Page **không** cần style lại scrollbar. Cần ẩn scrollbar nhưng vẫn cuộn được
+  (dải tab/filter ngang) thì thêm class `scrollbar-hidden`.
 
 ## Layout
 

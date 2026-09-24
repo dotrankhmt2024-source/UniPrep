@@ -1,0 +1,24 @@
+/*
+ * Rail điều hướng (layouts/private/Sider).
+ *
+ * antd set cứng `.ant-menu-inline-collapsed { width: <collapsedWidth> }` (mặc định 100px).
+ * Rail của mình chỉ rộng 80px và còn bị scrollbar ăn mất vài px, nên menu bị tràn ngang
+ * và icon lệch khỏi tâm. Ép menu luôn khớp bề rộng thực tế của container để icon căn giữa đúng.
+ */
+.sider-menu.ant-menu-inline-collapsed {
+	width: 100%;
+}
+
+/* Tiêu đề nhóm: bỏ thụt lề mặc định của antd cho khớp padding của rail. */
+.sider-menu .ant-menu-item-group-title {
+	padding-inline: 8px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	color: var(--color-on-surface-variant);
+}
+
+/* Item thu gọn: bỏ bo góc để vùng hover phủ kín rail. */
+.sider-menu.ant-menu-inline-collapsed .ant-menu-item {
+	border-radius: 10px;
+}

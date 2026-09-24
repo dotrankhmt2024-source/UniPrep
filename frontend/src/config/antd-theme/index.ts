@@ -105,6 +105,12 @@ export const getAntdTheme = (isDark: boolean): ThemeConfig => ({
 			itemHoverBg: isDark ? 'rgba(0, 99, 152, 0.18)' : '#eff4ff',
 			itemColor: isDark ? '#b4c0d6' : '#45464d',
 			itemHeight: 42,
+			// Phải khớp bề rộng rail thu gọn (`w-20` = 80px trong layouts/private/Sider).
+			// Mặc định antd tính `controlHeightLG * 2` = 100px nên icon bị lệch khỏi tâm rail.
+			collapsedWidth: 80,
+			collapsedIconSize: 18,
+			// Bỏ lề ngang để icon trong menu thu gọn căn đúng tâm (antd trừ lề này vào padding).
+			itemMarginInline: 0,
 		},
 	},
 });
