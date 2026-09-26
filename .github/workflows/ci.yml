@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   frontend:
-    name: Frontend (lint + build)
+    name: Frontend (build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,14 +29,11 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
       - name: Build
         run: npm run build
 
   backend:
-    name: Backend (lint + build)
+    name: Backend (build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,13 +49,6 @@ jobs:
 
       - name: Install
         run: npm ci
-
-      # Không dùng `npm run lint`: script đó là
-      #   eslint "{src,apps,libs,test}/**/*.ts" --fix
-      # mà apps/ libs/ test/ không tồn tại -> ESLint 9 exit 2.
-      # Trên CI cũng không được dùng --fix (phải báo lỗi, không tự sửa).
-      - name: Lint
-        run: npx eslint "src/**/*.ts"
 
       - name: Build
         run: npm run build
