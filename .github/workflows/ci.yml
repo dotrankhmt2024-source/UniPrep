@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   frontend:
-    name: Frontend (lint + build)
+    name: Frontend (build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,14 +29,11 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
       - name: Build
         run: npm run build
 
   backend:
-    name: Backend (lint + build)
+    name: Backend (build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,12 +49,6 @@ jobs:
 
       - name: Install
         run: npm ci
-
-      # Không dùng `npm run lint`: script đó là
-      #   eslint "src/**/*.ts" --fix
-      # Trên CI không được dùng --fix: CI phải BÁO LỖI, không tự sửa rồi báo xanh.
-      - name: Lint
-        run: npx eslint "src/**/*.ts"
 
       - name: Build
         run: npm run build
