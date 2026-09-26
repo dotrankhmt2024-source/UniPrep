@@ -1,11 +1,12 @@
 # UniPrep
 
-**UniPrep – An Online University Exam Preparation and Learning Platform.**
+**UniPrep – An Online Learning Platform.**
 
 UniPrep is a learning platform whose long-term goal is *Learning Analytics and early warning*:
 dashboards for learning behaviour and results, detection of learners at risk of falling behind,
-and explainable interventions for teachers. The LMS itself (courses, lessons, exercises,
-AI-assisted speaking/writing practice) is the source of the behavioural data that feeds analytics.
+and explainable interventions for teachers. The LMS itself (courses, lessons, materials, quizzes,
+progress tracking) is the source of the behavioural data that feeds analytics. Lesson content is
+text, slides and video — the platform is not tied to any particular subject.
 
 > **Status: early scaffold.** The business backend exposes a reference CRUD module and a health
 > check; the frontend has a design-system foundation, a private layout and three pages (two of them
@@ -36,7 +37,7 @@ AI-assisted speaking/writing practice) is the source of the behavioural data tha
 | Styling | Tailwind CSS 4 + Ant Design 6 | Material 3 design tokens mapped onto antd's theme |
 | Editor | TipTap 3 | Rich text editor used for lesson/announcement content |
 | HTTP client | Axios | Thin wrapper in `frontend/src/config/query-method` |
-| Client state | Zustand + React context | Context for theme; Zustand available for feature state |
+| Client state | Redux Toolkit + React context | Context for the theme; `@reduxjs/toolkit` + `react-redux` are installed for cross-page state (no store folder yet — see Roadmap) |
 | Backend | NestJS 11 + TypeScript | Modular REST API, Swagger/OpenAPI docs |
 | ORM / DB | TypeORM 0.3 + PostgreSQL | `synchronize: true` in dev (no migrations yet) |
 | Validation | `class-validator` / `class-transformer` | Global `ValidationPipe` with flattened error messages |
@@ -169,7 +170,16 @@ DTO nested error surfaces as `profile.address: address should not be empty`.
 | `DELETE` | `/api/students/:id` | Delete |
 | `GET` | `/api/health` | Liveness + database connectivity |
 
-Entities extend `BaseEntityCustom`, which supplies a UUID `id`, `createdAt` and `updatedAt`.
+Entities extend `BaseEntityCustom`, which supplies a UUID `id` and the `created_at` / `updated_at`
+`timestamptz` columns. Column names are declared explicitly as snake_case on every `@Column`
+(`@CreateDateColumn({ name: 'created_at' })`, …) because the project does not register a
+`SnakeNamingStrategy` — dropping `name` would make TypeORM emit camelCase columns and mix two naming
+conventions in one schema.
+
+> **If you already created tables with an older checkout**, `synchronize` may have produced camelCase
+> `createdAt` / `updatedAt` columns. After pulling this change, check with `\d students`: if both
+> spellings exist, drop the table and let `synchronize` recreate it (`DROP TABLE students;`). Only
+> sample data is at risk.
 
 ---
 
@@ -244,6 +254,9 @@ ensures the shared Cloudflare tunnel is up. The Vite server whitelists the publi
 
 Ordered roughly by dependency. Nothing below exists in the codebase yet.
 
+- [ ] **Client state store** — `@reduxjs/toolkit` + `react-redux` are installed, but `src/store/`
+      does not exist yet. Create the store (`configureStore` + slices) with the first feature that
+      needs state shared across pages (login/session).
 - [ ] **Auth & RBAC** — `AuthModule`/`UserModule`, JWT access + refresh tokens, Passport
       strategies, `student` / `teacher` / `admin` roles, route guards.
 - [ ] **Course domain** — `Course` / `Lesson` / `Exercise` entities and modules, replacing
@@ -252,8 +265,8 @@ Ordered roughly by dependency. Nothing below exists in the codebase yet.
       attempts, recency) into `learning_events`.
 - [ ] **Migrations** — replace `synchronize: true` with TypeORM migrations and a seed script.
 - [ ] **Analytics** — aggregation endpoints (trends, cohort comparison) for the teacher dashboard.
-- [ ] **AI service** — independent FastAPI service for at-risk prediction and speaking/writing
-      assessment, reachable only from the internal network.
+- [ ] **AI service** — independent FastAPI service for at-risk prediction and result explanations,
+      reachable only from the internal network.
 - [ ] **Queue** — Redis + BullMQ so NestJS never blocks on a heavy inference job; job status
       returned by polling/callback/WebSocket.
 - [ ] **Explainability & interventions** — persist `risk_score`, `risk_level`, feature
