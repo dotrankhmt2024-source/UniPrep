@@ -67,6 +67,12 @@ UniPrep/
 │   │   ├── auth/            register/login/refresh/logout/password flows, Passport strategies,
 │   │   │                    token service, auth DTOs, entities (refresh/reset tokens)
 │   │   ├── user/            user service/controller/mapper (E1: profile by id + status change)
+│   │   ├── course/          categories, courses, instructors, cohorts, prerequisites, enrolments
+│   │   │                    (E3) + `CourseAccessService` (the single "who may see/change what" answer)
+│   │   ├── lesson/          sections, lessons, materials (E3) — one visibility rule shared by
+│   │   │                    "read a lesson" and "read its materials"
+│   │   ├── storage/         global file-store service (E3): UUID filenames, MIME whitelist, no path
+│   │   │                    traversal
 │   │   ├── common/          response envelope, exception filter, base entity, union types,
 │   │   │                    guards (@Public/@Roles/@OwnResource), pipes, validators, transformers
 │   │   ├── config/          Swagger config shared by `main.ts` and the OpenAPI export script
@@ -86,13 +92,12 @@ UniPrep/
 │   │   ├── contexts/        theme provider + auth provider (hydrates the session)
 │   │   ├── layouts/auth/    public shell for login/register/forgot/reset
 │   │   ├── layouts/private/ Header + Sider + <Outlet /> (role-filtered menu)
-│   │   ├── mocks/           temporary mock data (courses)
 │   │   ├── pages/           one folder per route (auth/* for the sign-in flow)
 │   │   ├── routes/          createBrowserRouter route table + ProtectedRoute
 │   │   ├── store/           Redux Toolkit store (auth slice) + typed hooks
 │   │   ├── styles/          M3 tokens, scrollbar, table, editor CSS
 │   │   ├── types/           shared domain types
-│   │   └── utils/           lazy(), token storage helpers
+│   │   └── utils/           lazy(), token storage helpers, `sanitizeHtml()` (DOMPurify)
 │   ├── design/              static HTML mockups — reference only, never a component source
 │   └── .env.example         copy to .env
 ├── deploy/                  Windows deploy scripts (stop → pull → build → start)
@@ -218,7 +223,8 @@ risk model can use. It is **idempotent**: every id is derived from a natural key
 | Accounts | admin, 2 teachers, 1 demo student + 30 virtual learners (`sv0001@example.test` …) |
 | Catalogue | 3 categories, 2 published courses (MATH101 "Giải tích 1", PHY101 "Vật lý đại cương") |
 | Content | 7 sections, 28 lessons, 33 materials, 2 quizzes (10 questions / 40 options) |
-| Learning | 46 enrollments, 324 lesson-progress rows, ~1 170 learning events over 8 weeks, 15 graded submissions |
+| Classes & assignments (E3) | 4 cohorts (each course has `L01`/`L02`; `MATH101` L01 has 16 members including the demo student) and 4 `course_instructors` rows: one `owner` per course plus the other teacher as `co_instructor` **scoped to `L01`** — the fixture a per-class data scope (E8) needs |
+| Learning | 46 enrollments (each with a `cohort_id`), 324 lesson-progress rows, ~1 170 learning events over 8 weeks, 15 graded submissions |
 | Analytics/AI | 1 rule-based `model_version` (v0) and 1 global `alert_settings` row |
 
 - Demo password comes from `SEED_DEMO_PASSWORD` in `backend/.env` (never hard-coded); the demo
@@ -287,10 +293,33 @@ DTO nested error surfaces as `profile.address: address should not be empty`.
 Shared pagination lives in `backend/src/common/dto/pagination-query.dto.ts` +
 `page-meta.dto.ts` (`PageMetaDto` matches the frontend type of the same name one-to-one).
 
-**Current endpoints:** `GET /api`, `GET /api/health`, the 8 `/api/auth/*` routes above, and the 6
-`/api/users*` routes in the table — **15 paths in total** (`npm run openapi:export` prints the exact
-count). The reference `student` CRUD module was removed together with its legacy `students` table —
-the real schema uses `users` + `enrollments`.
+**Course & content endpoints (E3, 2026-10-03):**
+
+| Route | Access | Behaviour |
+|---|---|---|
+| `GET /api/categories` | any signed-in role | `page`/`take`/`search` (name or slug)/`sortBy`; each item carries `courseCount` |
+| `POST/PATCH/DELETE /api/categories[/:id]` | `admin` | `slug` is generated from `name` when omitted (Vietnamese diacritics are stripped); duplicate name/slug → `409`; deleting a category that still has courses → `409` |
+| `GET /api/courses` | any signed-in role | server-side search/filter/sort/paging. Scope is applied **before** the client filters: a student sees only `published` + not `private`, a teacher additionally sees their own drafts and the courses they are assigned to, an admin sees everything. `sortBy=enrolledCount` orders by a correlated subquery; `meta.itemCount` is the **total** match count (the E2 trap, re-tested here) |
+| `POST /api/courses` | `teacher`, `admin` | a teacher always owns the course they create (`ownerId` in the body is ignored); an admin **must** send `ownerId` of an active teacher, otherwise `400`. The matching `course_instructors` row (`role_in_course = 'owner'`) is created in the same transaction |
+| `GET /api/courses/:id` | any signed-in role | detail + `prerequisites` + `instructors` + `myEnrollment` + `eligibility` (only for `student` — teachers do not enrol). A non-published course gives `403` to everyone who is not the owner/instructor/admin. It deliberately does **not** embed `sections`: the frontend makes a second call so `CourseModule` and `LessonModule` stay independent |
+| `PATCH/DELETE /api/courses/:id` | owner, assigned instructor, `admin` | only the keys actually sent are written; `DELETE` is a soft delete and answers `409` when the course already has enrolments |
+| `PATCH /api/courses/:id/publish` `/unpublish` | owner, assigned instructor, `admin` | publishing needs at least one lesson (`400` otherwise) and can optionally publish every chapter/lesson; unpublishing returns the course to `draft` but **keeps** `published_at` and leaves enrolments untouched |
+| `GET|POST /api/courses/:id/instructors`, `DELETE /api/courses/:id/instructors/:userId` | read: any signed-in role · write: owner/assigned/`admin` | assigning a non-teacher → `400`, a duplicate assignment → `409`; the owner's own row cannot be removed (`400`) — change the owner instead |
+| `GET|POST /api/courses/:id/cohorts`, `PATCH|DELETE /api/cohorts/:id` | as above | class/group per course with a member count; duplicate `class_code` inside one course → `409`; deleting a cohort keeps its enrolments (`ON DELETE SET NULL`). This is the table E2-T3 deferred |
+| `PUT /api/courses/:id/prerequisites` | owner, assigned instructor, `admin` | replaces the whole list; self-reference and unknown ids → `400` |
+| `GET /api/courses/:courseId/sections`, `POST` · `GET|PATCH|DELETE /api/sections/:id` · `PATCH …/sections/reorder` | read: any signed-in role · write: owner/assigned/`admin` | a student only ever sees published lessons; a chapter that already has progress or submissions cannot be deleted (`409`); `reorder` takes the **full** list with `orderIndex` contiguous from 1 |
+| `GET /api/courses/:courseId/lessons`, `POST /api/sections/:sectionId/lessons` · `GET|PATCH|DELETE /api/lessons/:id` · `…/lessons/reorder` · `PATCH /api/lessons/:id/publish|hide` | read: any signed-in role · write: owner/assigned/`admin` | reading a lesson requires, for a student, all three of: published + non-private course, published lesson, and an `active`/`completed` enrolment (`403` otherwise). Deleting a lesson is a **soft** delete that renumbers the remaining lessons of the course; it is refused (`409`) when the lesson already has submissions or progress. Lesson order is course-wide (the unique index is `(course_id, order_index)`), so per-chapter reordering keeps the other chapters in place |
+| `POST|GET /api/lessons/:id/materials`, `DELETE /api/materials/:id` | read: same rule as the lesson · write: owner/assigned/`admin` | `multipart/form-data` with field `file`; the MIME type decides `materialType`; wrong type → `415`, over `MAX_UPLOAD_SIZE_MB` → `413`, no file → `400`; the client filename never reaches the path (the stored name is a UUID + extension) |
+| `POST /api/enrollments` | `student`, `admin` | the minimal slice pulled forward from E4-T1 so the register button is real: prerequisites (`400`), closed/full course (`400`), duplicate (`409`), and re-opening an enrolment that was `dropped` |
+
+**Full-text search index (`idx_courses_search_tsv`) exists but is unused by the API** — the catalog
+uses `LOWER(...) LIKE`, i.e. no index-friendly full-text search yet. It is listed as a known limitation.
+
+**Current endpoints:** **38 paths in total** (`npm run openapi:export` prints the exact count):
+`GET /api`, `GET /api/health`, the 8 `/api/auth/*` routes, the 6 `/api/users*` routes, and the
+course/category/cohort/lesson/material/enrolment routes in the E3 table. The reference `student` CRUD
+module was removed together with its legacy `students` table — the real schema uses `users` +
+`enrollments`.
 
 **OpenAPI export:** `npm run openapi:export` (in `backend/`) writes `backend/openapi.json` from the
 running application and the same `DocumentBuilder` configuration that serves Swagger UI. It needs
@@ -333,8 +362,11 @@ the pre-commit hook runs `eslint --fix` + `prettier --write` on staged files.
 | Path | Page | Access | Data source |
 |---|---|---|---|
 | `/login`, `/register`, `/forgot-password`, `/reset-password` | Auth pages (`layouts/auth`, single column) | Public | `apis/auth` |
-| `/` | My courses | Any signed-in role | `mocks/course.ts` (mock — to be replaced by the real catalog API in E3-T6) |
-| `/courses/:courseId` | Course content | Any signed-in role | `mocks/course.ts` (mock) |
+| `/` | Course catalog (search, category/level/status filters, sorting, server pagination) | Any signed-in role | `apis/course` + `apis/category` |
+| `/courses/:courseId` | Course detail: syllabus (chapters → lessons), prerequisites, eligibility and the real register button | Any signed-in role | `apis/course` + `apis/lesson` + `apis/enrollment` |
+| `/courses/:courseId/learn[/:lessonId]` | Lesson viewer: chapter outline, sanitized TipTap body, materials (video/PDF/links), previous/next | Any signed-in role (a student must be enrolled and the lesson published) | `apis/lesson` + `apis/material` |
+| `/teacher/courses` | Teacher's course list: create, publish/unpublish, delete | `teacher`, `admin` | `apis/course` + `apis/category` |
+| `/teacher/courses/:courseId` | Course editor — tabs for metadata, prerequisites, instructors, cohorts, and the content editor (chapters/lessons, TipTap body, material upload) | `teacher`, `admin` | `apis/course` + `apis/lesson` + `apis/material` |
 | `/profile` | My profile (view, edit, change password) | Any signed-in role | `apis/user` |
 | `/admin/users` | User management (`ITable` + filters + pagination) | `admin` only (route guard **and** backend `RolesGuard`) | `apis/user` |
 | `*` | Not found | Any signed-in role | — |
@@ -418,9 +450,11 @@ Ordered roughly by dependency. Nothing below exists in the codebase yet except w
       account status management, forgot/reset/change password.
 - [x] **Client state store** — Redux Toolkit store (`src/store/`) holds the session; `AuthProvider`
       hydrates it from `localStorage` and the axios interceptor refreshes tokens transparently.
-- [ ] **Course domain** — `CourseModule` / `LessonModule` / `ExerciseModule` services, controllers
-      and DTOs on top of the existing entities; replacing `frontend/src/mocks/course.ts` with a real
-      `apis/course`.
+- [x] **Course domain** — `CourseModule` (categories, courses, `course_instructors`, `cohorts`,
+      `course_prerequisites`, minimal enrolment) and `LessonModule` (sections, lessons, materials +
+      local-disk upload), with a single `CourseAccessService` answering "who may see/change what".
+      `frontend/src/mocks/course.ts` is **deleted**: the catalog, course detail, lesson viewer and the
+      teacher authoring area all read the API.
 - [ ] **Learning activity** — the `learning_events` writer endpoint (the table and its indexes
       already exist).
 - [ ] **Analytics** — aggregation endpoints (trends, cohort comparison) for the teacher dashboard.
@@ -440,20 +474,37 @@ Ordered roughly by dependency. Nothing below exists in the codebase yet except w
 - Every endpoint except the public list above requires a token; authorization is enforced in the
   services/guards, not only in the UI.
 - No test suite yet (deferred by decision on 2026-10-03); the CI `test` job is not present. The
-  deferred cases are E1-T9 (unit), the e2e half of E1-T6, and E2-T6 (user RBAC) — all parked in E13-T4.
+  deferred cases are E1-T9 (unit), the e2e half of E1-T6, E2-T6 (user RBAC) and E3-T10 (content
+  permissions) — all parked in E13-T4. Those epics were verified instead by throwaway end-to-end
+  scripts run against a live server (E3: permissions, course/section/lesson lifecycle, reorder
+  invariants, upload limits and traversal, prerequisites/eligibility, cohorts/instructors) — the
+  scripts are **not** committed, so the verification is not reproducible from the repository.
 - IP-based rate limiting (`429`) is not implemented — only the per-account login lockout is; the IP
   part is deferred to E13-T4.
 - The dev password-reset email is a server log line, not a real email (no mail module yet).
-- Course pages read mock data.
+- Uploaded material files live on **local disk** (`UPLOAD_DIR`, default `./uploads`, gitignored) and
+  are served statically at `/uploads/**`; `fileUrl` is built from `PUBLIC_BASE_URL`. That does not
+  share across instances — a deployment with more than one node needs a shared volume or object
+  storage (recorded as resolved-with-caveat in `docs/02-specs/api-specification.md` §13).
+- Lesson HTML is stored verbatim and sanitized **in the browser** at render time (`utils/html.ts`,
+  DOMPurify with an allowlist). Server-side sanitization on write is the hardening step if content
+  ever becomes author-supplied by untrusted roles.
+- Catalog search uses `LOWER(...) LIKE`; the `idx_courses_search_tsv` GIN index exists in the
+  database but no query uses it yet, so search does not scale past a few thousand courses.
+- Enrolment is create-only (`POST /api/enrollments`). Listing, cancelling and progress
+  (`lesson_progress`, `progress_percent`) still belong to E4, as does the learner-status derivation
+  (`in-progress`/`future`/`past`) the old mock used to fake.
 - User management covers list/filter/pagination, role change and status change only. `POST /api/users`,
   `PATCH|DELETE /api/users/:id` and the avatar routes are still specification-only, and the profile
   payload has no `summary` block yet (it needs `enrollments`/`submissions` from E4/E5).
-- Teacher data scoping (`cohorts` + class membership, originally E2-T3) moved to E3 because the table
-  has a foreign key to `courses`, which only exists from E3-T1.
-- `risk_feature_contributions`, `course_instructors`, `cohorts` and the two analytics materialized
-  views are **not** in the baseline migration — the epics that need them (E8, E9, E3) add their own
-  migrations.
-- `enrollments.cohort_id` is a plain nullable `uuid` column without a foreign key until `cohorts`
-  exists (tracked as `TODO(E3, was E2-T3)` in the entity).
+- Teacher data scoping is **structural** from E3 (`cohorts` + `course_instructors.cohort_id`), but no
+  query filters learner data by class yet — that arrives with the analytics dashboard (E8). At E3 a
+  co-instructor assigned to one class still has content rights over the whole course, which is
+  deliberate: chapters and lessons do not belong to a class.
+- `risk_feature_contributions` and the two analytics materialized views are **not** in the baseline
+  migration — the epics that need them (E8, E9) add their own migrations. `cohorts`,
+  `course_instructors` and `course_prerequisites` were added by
+  `1791022171040-CreateCohortsInstructorsPrerequisites`, which also gave `enrollments.cohort_id` its
+  foreign key (the `TODO(E3, was E2-T3)` in the entity is gone).
 - UI copy and API messages are in Vietnamese. Code comments are mixed: older files use Vietnamese,
   newer ones English. This README is English; `frontend/src/components/README.md` is Vietnamese.
