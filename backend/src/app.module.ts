@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { UserModule } from './user/user.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -37,6 +38,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 			}),
 		}),
 		AuthModule,
+		UserModule,
 		HealthModule,
 	],
 	controllers: [AppController],
