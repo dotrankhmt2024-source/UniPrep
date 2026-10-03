@@ -271,11 +271,26 @@ DTO nested error surfaces as `profile.address: address should not be empty`.
 | Account status | `pending`/`active`/`suspended`/`disabled` plus a 15-minute temporary lock after 10 failed logins; the reason is returned as a specific Vietnamese `403` message |
 | Password policy | 8–16 chars with upper, lower, digit and special character — identical regex/messages on both sides (`PasswordInput.tsx` ↔ `@IsStrongPassword()`) |
 | Password reset | One-time token in `password_reset_tokens` (30 min, `PASSWORD_RESET_TTL`); in dev the link is written to the server log (`MailService`) |
+| Wrong current password | `POST /api/auth/change-password` answers **`400`** (not `401`): the caller is authenticated, only the body is wrong — and a `401` would make the frontend interceptor rotate the refresh token for nothing |
 
-**Current endpoints:** `GET /api`, `GET /api/health`, the 8 `/api/auth/*` routes above plus
-`GET /api/users/:id` (self or admin) and `PATCH /api/users/:id/status` (admin only). The reference
-`student` CRUD module was removed together with its legacy `students` table — the real schema uses
-`users` + `enrollments`. `npm run openapi:export` reports the exact path count.
+**User endpoints (E2, 2026-10-03):**
+
+| Route | Access | Behaviour |
+|---|---|---|
+| `GET /api/users/me` | any signed-in role | full profile — the 8 auth fields plus `phone`/`major`/`bio`/`studentCode`/`dateOfBirth` |
+| `PATCH /api/users/me` | any signed-in role | writes only `fullName` (2–255), `phone` (`^(?:\+84\|0)\d{9}$`), `major` (≤255) and `bio` (≤1000); `role`/`status`/`email` are dropped by the global `whitelist`, so privilege escalation through the profile endpoint is impossible by construction; sending `null` clears a field |
+| `GET /api/users` | `admin` | `page`/`take`/`search`/`role`/`status`/`sortBy`/`order`; `take` is capped at 100 and `sortBy` is a closed list because the value goes into `ORDER BY`; a stable `id` tiebreaker keeps paging consistent; soft-deleted users never appear |
+| `GET /api/users/:id` | self or `admin` | the anti-IDOR sample resource (`OwnershipGuard` + `@OwnResource('id')`) |
+| `PATCH /api/users/:id/status` | `admin` | `pending`/`active`/`suspended`/`disabled`; leaving `active` revokes every session at once; an admin cannot lock themselves |
+| `PATCH /api/users/:id/role` | `admin` | an admin cannot demote themselves; a genuine role change revokes every refresh token, while authorisation itself is immediate because `JwtStrategy` re-reads the role from the database instead of trusting the token claim |
+
+Shared pagination lives in `backend/src/common/dto/pagination-query.dto.ts` +
+`page-meta.dto.ts` (`PageMetaDto` matches the frontend type of the same name one-to-one).
+
+**Current endpoints:** `GET /api`, `GET /api/health`, the 8 `/api/auth/*` routes above, and the 6
+`/api/users*` routes in the table — **15 paths in total** (`npm run openapi:export` prints the exact
+count). The reference `student` CRUD module was removed together with its legacy `students` table —
+the real schema uses `users` + `enrollments`.
 
 **OpenAPI export:** `npm run openapi:export` (in `backend/`) writes `backend/openapi.json` from the
 running application and the same `DocumentBuilder` configuration that serves Swagger UI. It needs
@@ -320,6 +335,8 @@ the pre-commit hook runs `eslint --fix` + `prettier --write` on staged files.
 | `/login`, `/register`, `/forgot-password`, `/reset-password` | Auth pages (`layouts/auth`, single column) | Public | `apis/auth` |
 | `/` | My courses | Any signed-in role | `mocks/course.ts` (mock — to be replaced by the real catalog API in E3-T6) |
 | `/courses/:courseId` | Course content | Any signed-in role | `mocks/course.ts` (mock) |
+| `/profile` | My profile (view, edit, change password) | Any signed-in role | `apis/user` |
+| `/admin/users` | User management (`ITable` + filters + pagination) | `admin` only (route guard **and** backend `RolesGuard`) | `apis/user` |
 | `*` | Not found | Any signed-in role | — |
 
 Any other path while signed out redirects to `/login?redirect=<original path>`, and the original path
@@ -422,15 +439,21 @@ Ordered roughly by dependency. Nothing below exists in the codebase yet except w
 
 - Every endpoint except the public list above requires a token; authorization is enforced in the
   services/guards, not only in the UI.
-- No test suite yet (deferred by decision on 2026-10-03); the CI `test` job is not present.
+- No test suite yet (deferred by decision on 2026-10-03); the CI `test` job is not present. The
+  deferred cases are E1-T9 (unit), the e2e half of E1-T6, and E2-T6 (user RBAC) — all parked in E13-T4.
 - IP-based rate limiting (`429`) is not implemented — only the per-account login lockout is; the IP
   part is deferred to E13-T4.
 - The dev password-reset email is a server log line, not a real email (no mail module yet).
 - Course pages read mock data.
+- User management covers list/filter/pagination, role change and status change only. `POST /api/users`,
+  `PATCH|DELETE /api/users/:id` and the avatar routes are still specification-only, and the profile
+  payload has no `summary` block yet (it needs `enrollments`/`submissions` from E4/E5).
+- Teacher data scoping (`cohorts` + class membership, originally E2-T3) moved to E3 because the table
+  has a foreign key to `courses`, which only exists from E3-T1.
 - `risk_feature_contributions`, `course_instructors`, `cohorts` and the two analytics materialized
-  views are **not** in the baseline migration — the epics that need them (E8, E9, E2/E3) add their own
+  views are **not** in the baseline migration — the epics that need them (E8, E9, E3) add their own
   migrations.
 - `enrollments.cohort_id` is a plain nullable `uuid` column without a foreign key until `cohorts`
-  exists (tracked as `TODO(E2-T3)` in the entity).
+  exists (tracked as `TODO(E3, was E2-T3)` in the entity).
 - UI copy and API messages are in Vietnamese. Code comments are mixed: older files use Vietnamese,
   newer ones English. This README is English; `frontend/src/components/README.md` is Vietnamese.
