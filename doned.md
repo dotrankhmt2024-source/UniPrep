@@ -30,6 +30,12 @@
 - Khoá có điều kiện tiên quyết mà mình chưa học xong → nút đăng ký bị mờ kèm lý do.
 - Bấm **Vào học** → xem bài: mục lục chương/bài bên trái, nội dung bài ở giữa, video phát được, tệp/hình tải được, có nút **Bài trước** / **Bài sau**.
 - Chưa đăng ký mà mở bài → báo cần đăng ký khoá học.
+- Menu **Khoá học của tôi**: xem các khoá đang học, phần trăm hoàn thành và số bài đã hoàn thành; bấm **Tiếp tục học** để quay lại bài chưa hoàn thành gần nhất.
+- Trong bài học, bấm **Đánh dấu hoàn thành** → phần trăm tiến độ cập nhật. Bấm lại không làm tăng tiến độ thêm; bài đã hoàn thành có thể bỏ đánh dấu.
+- **Làm quiz mẫu:** đăng nhập `hocvien@uniprep.test` → mở khoá **Giải tích 1 (MATH101)** → bấm **Bài kiểm tra** → chọn **Kiểm tra luyện tập — Giải tích 1**. Quiz mẫu có 5 câu, 15 phút và tối đa 3 lượt.
+- Bấm **Bắt đầu làm bài**; dùng **Câu trước** / **Câu tiếp theo** để di chuyển. Đáp án được lưu trên trình duyệt trong lượt làm, nên tải lại trang có thể khôi phục khi attempt còn hạn.
+- Bấm **Nộp bài** → thấy điểm, số câu đúng và phần xem lại đáp án/giải thích. Thời gian và số lượt do server kiểm tra; hết giờ thì attempt bị khoá. Gửi tất cả câu bỏ trống bằng cách để lựa chọn rỗng vẫn được chấm 0 điểm.
+- Có thể làm lại trong giới hạn lượt của quiz. Tài khoản `hocvien@uniprep.test` là học viên mẫu đã ghi danh MATH101; học viên khác cần đăng ký khoá trước khi thấy quiz.
 
 ## 5. Giảng viên làm được gì
 - **Soạn nội dung** → danh sách khoá mình phụ trách (kèm khoá đã công bố của người khác): tìm, lọc trạng thái, chuyển trang, **Tạo khoá học**.
@@ -42,6 +48,9 @@
   - **Nội dung**: thêm / sửa / xoá chương và bài; đổi thứ tự bằng mũi tên; soạn nội dung bằng trình soạn thảo (đậm, nghiêng, màu, danh sách, link); công bố hoặc ẩn từng bài; tải học liệu lên và xoá học liệu. Tệp quá 50MB hoặc sai định dạng sẽ báo lỗi rõ ràng.
   - Bài đã có học viên học hoặc đã nộp bài thì **không xoá được** (báo lỗi) — đây là hành vi đúng.
 - Sửa khoá của giảng viên khác → báo "Bạn không phụ trách khoá học này."
+- **Ngân hàng câu hỏi & bài kiểm tra:** trong trang soạn một khoá, bấm link cùng tên bên dưới thông tin khoá. Tạo quiz bản nháp, nhập tên/thời lượng/số lượt; thêm câu hỏi một đáp án, nhiều đáp án hoặc đúng/sai và đánh dấu đáp án đúng.
+- Có thể thêm nhiều câu hỏi, sửa nội dung hoặc xoá câu hỏi bản nháp (có xác nhận). Bấm **Công bố** để học viên đã ghi danh thấy quiz; quiz phải có ít nhất một câu. Sau khi đã có lượt làm, backend khoá sửa cấu trúc để giữ nguyên lịch sử điểm.
+- Khi học viên nộp bài, chọn quiz đã công bố để xem danh sách bài nộp; giảng viên có thể nhập điểm và phản hồi rồi bấm **Lưu phản hồi**. Hiện thao tác này chưa phát thông báo cho học viên.
 
 ## 6. Quản trị viên làm được gì
 - Có toàn bộ quyền của giảng viên, cộng thêm:
@@ -50,5 +59,6 @@
 
 ## 7. Chưa có — đừng test mất công
 - Chưa gửi email thật; chưa có ảnh đại diện; quản trị viên chưa tạo / sửa / xoá được người dùng.
-- Chưa có: danh sách "khoá học của tôi", huỷ đăng ký, đánh dấu hoàn thành bài, phần trăm tiến độ, quiz / bài tập, thảo luận, thông báo, thống kê hay dashboard, cảnh báo học viên yếu.
+- Chưa có: huỷ đăng ký khoá học, thảo luận, chuông/thông báo cho học viên, thống kê/dashboard và cảnh báo học viên yếu.
+- Quiz v1 chỉ hỗ trợ câu hỏi trắc nghiệm một đáp án, nhiều đáp án và đúng/sai; chưa có tự luận/trả lời ngắn, autosave đáp án lên server, hoặc trang riêng để học viên xem lại các lần nộp cũ sau khi rời trang kết quả.
 - Chưa có chức năng bình luận hay đánh giá khoá học.
