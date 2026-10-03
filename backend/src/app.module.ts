@@ -7,6 +7,9 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 import { UserModule } from './user/user.module';
+import { CourseModule } from './course/course.module';
+import { LessonModule } from './lesson/lesson.module';
+import { StorageModule } from './storage/storage.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -39,6 +42,12 @@ import { RolesGuard } from './common/guards/roles.guard';
 		}),
 		AuthModule,
 		UserModule,
+		// E3: nội dung khoá học. `CourseModule` đứng trước `LessonModule` vì module sau dùng
+		// `CourseAccessService` do module trước `exports` (thứ tự này chỉ để đọc dễ hiểu — Nest
+		// tự giải phụ thuộc, không phụ thuộc thứ tự trong mảng).
+		CourseModule,
+		LessonModule,
+		StorageModule,
 		HealthModule,
 	],
 	controllers: [AppController],

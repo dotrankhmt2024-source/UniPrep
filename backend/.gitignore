@@ -19,5 +19,10 @@ lerna-debug.log*
 # Env
 .env
 
+# Học liệu tải lên (E3-T4): tệp người dùng tải lên KHÔNG bao giờ được commit — vừa làm phình repo,
+# vừa có nguy cơ đưa dữ liệu thật lên remote. `.env.example` đã ghi "đã nằm trong .gitignore"
+# nhưng trước E3 dòng này chưa tồn tại; E3-T4 bổ sung cho khớp (DoD: "file không nằm trong git").
+/uploads
+
 # Tests
 /coverage

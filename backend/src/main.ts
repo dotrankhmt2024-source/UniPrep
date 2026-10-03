@@ -6,6 +6,8 @@ import {
 	ValidationError,
 	ValidationPipe,
 } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { resolve } from 'node:path';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
@@ -38,10 +40,25 @@ const flattenValidationErrors = (
 };
 
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule);
+	const app = await NestFactory.create<NestExpressApplication>(AppModule);
 	app.setGlobalPrefix('api');
 
 	const configService = app.get(ConfigService);
+
+	/**
+	 * Học liệu tải lên được phục vụ tĩnh tại `/uploads/**` (E3-T4).
+	 *
+	 * Vì sao **không** để dưới `/api`: đây là tệp, không phải endpoint nghiệp vụ — không đi qua
+	 * `ValidationPipe`/interceptor envelope, và URL trả về cho FE (`fileUrl`) phải mở trực tiếp
+	 * được trong thẻ `<video>`/`<img>`. `setGlobalPrefix('api')` không áp cho static assets.
+	 *
+	 * Cảnh báo vận hành: thư mục này **không** được commit (`backend/.gitignore` có `/uploads`).
+	 * Trên môi trường nhiều máy, đĩa cục bộ không chia sẻ được — đó là câu hỏi mở số 3 của
+	 * `api-specification.md` §13 (đĩa cục bộ so với object storage), và `.env` đã chọn đĩa cục bộ
+	 * bằng `UPLOAD_DIR`.
+	 */
+	const uploadDir = configService.get<string>('UPLOAD_DIR') ?? './uploads';
+	app.useStaticAssets(resolve(uploadDir), { prefix: '/uploads/' });
 
 	const rawOrigins = configService.get<string>('CORS_ORIGINS', '');
 	const originList = rawOrigins
