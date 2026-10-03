@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Spin } from 'antd';
+import { Progress, Spin, message } from 'antd';
 import dayjs from 'dayjs';
 import { Link, useNavigate, useParams } from 'react-router';
 import { getCourseById } from '@/apis/course';
+import {
+	completeLesson,
+	getEnrollmentProgress,
+	uncompleteLesson,
+} from '@/apis/enrollment';
 import { getLessonById, getLessons, getSections } from '@/apis/lesson';
 import { getMaterials } from '@/apis/material';
-import { Badge, ErrorBadge, Icon, IOutLinedBtn } from '@/components';
+import { Badge, ErrorBadge, Icon, IOutLinedBtn, ISolidBtn } from '@/components';
 import { getApiErrorMessage } from '@/config/query-method/axiosMethod.config';
 import type {
 	CourseDetail,
@@ -14,6 +19,7 @@ import type {
 	SectionListItem,
 } from '@/types';
 import { sanitizeHtml } from '@/utils/html';
+import { useAppSelector } from '@/store/hooks';
 import LessonOutline from './lesson-outline';
 import MaterialList from './material-list';
 import {
@@ -69,8 +75,13 @@ const LessonViewerPage = () => {
 		lessonId?: string;
 	}>();
 	const navigate = useNavigate();
+	const role = useAppSelector((state) => state.auth.user?.role);
 
 	const [course, setCourse] = useState<CourseDetail | null>(null);
+	const [enrollmentProgress, setEnrollmentProgress] =
+		useState<Awaited<ReturnType<typeof getEnrollmentProgress>>['data']>(null);
+	const [isProgressUpdating, setIsProgressUpdating] = useState(false);
+	const [progressError, setProgressError] = useState('');
 	const [sections, setSections] = useState<SectionListItem[]>([]);
 	const [lessons, setLessons] = useState<LessonListItem[]>([]);
 	const [isOutlineLoading, setIsOutlineLoading] = useState(true);
@@ -143,6 +154,33 @@ const LessonViewerPage = () => {
 			cancelled = true;
 		};
 	}, [courseId]);
+
+	useEffect(() => {
+		const enrollmentId = course?.myEnrollment?.id;
+		if (!enrollmentId) {
+			setEnrollmentProgress(null);
+			setProgressError('');
+			return;
+		}
+
+		let cancelled = false;
+		void getEnrollmentProgress(enrollmentId)
+			.then((response) => {
+				if (cancelled) return;
+				setEnrollmentProgress(response.data);
+				setProgressError('');
+			})
+			.catch((error: unknown) => {
+				if (cancelled) return;
+				setProgressError(
+					getApiErrorMessage(error, 'Không tải được tiến độ học tập.'),
+				);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [course?.myEnrollment?.id]);
 
 	/** Mục lục đã gộp chương; trải phẳng ra là **lộ trình** dùng cho chọn bài, trước/sau và "Bài x / y". */
 	const outlineItems = useMemo(
@@ -271,6 +309,31 @@ const LessonViewerPage = () => {
 		activeLessonIndex >= 0 && activeLessonIndex < publishedLessons.length - 1
 			? publishedLessons[activeLessonIndex + 1]
 			: null;
+	const currentLessonProgress = enrollmentProgress?.sections
+		.flatMap((section) => section.lessons)
+		.find((item) => item.lessonId === selectedLessonId);
+
+	const toggleLessonCompletion = async () => {
+		if (!selectedLessonId || isProgressUpdating) return;
+		setIsProgressUpdating(true);
+		try {
+			if (currentLessonProgress?.state === 'completed') {
+				await uncompleteLesson(selectedLessonId);
+				message.success('Đã bỏ đánh dấu hoàn thành.');
+			} else {
+				await completeLesson(selectedLessonId);
+				message.success('Đã đánh dấu hoàn thành bài học.');
+			}
+			if (course?.myEnrollment?.id) {
+				const response = await getEnrollmentProgress(course.myEnrollment.id);
+				setEnrollmentProgress(response.data);
+			}
+		} catch (error) {
+			message.error(getApiErrorMessage(error));
+		} finally {
+			setIsProgressUpdating(false);
+		}
+	};
 
 	const goToLesson = (id: string) => {
 		void navigate(`/courses/${courseId}/learn/${id}`);
@@ -352,6 +415,52 @@ const LessonViewerPage = () => {
 				</div>
 
 				<div className="min-w-0 space-y-space-lg lg:col-span-8 xl:col-span-9">
+					{role === 'student' && course?.myEnrollment && (
+						<section className="space-y-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest p-space-md">
+							<div className="flex flex-wrap items-center justify-between gap-space-sm">
+								<span className="font-label-md text-on-surface">
+									Tiến độ khoá học
+								</span>
+								<span className="font-label-md text-on-surface-variant">
+									{enrollmentProgress?.completedLessons ?? 0} /{' '}
+									{enrollmentProgress?.totalLessons ?? publishedLessons.length}{' '}
+									bài
+								</span>
+							</div>
+							<Progress
+								percent={enrollmentProgress?.progressPercent ?? 0}
+								showInfo
+							/>
+							{progressError && (
+								<ErrorBadge icon={<Icon name="error" size={14} />} size="sm">
+									{progressError}
+								</ErrorBadge>
+							)}
+							{!progressError && (
+								<ISolidBtn
+									type="primary"
+									background="primary"
+									loading={isProgressUpdating}
+									disabled={!enrollmentProgress}
+									icon={
+										<Icon
+											name={
+												currentLessonProgress?.state === 'completed'
+													? 'undo'
+													: 'check_circle'
+											}
+											size={16}
+										/>
+									}
+									onClick={() => void toggleLessonCompletion()}
+								>
+									{currentLessonProgress?.state === 'completed'
+										? 'Bỏ hoàn thành'
+										: 'Đánh dấu hoàn thành'}
+								</ISolidBtn>
+							)}
+						</section>
+					)}
 					{isLessonLoading && !lesson ? (
 						<div className="flex min-h-[40vh] items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest p-space-lg shadow-sm">
 							<Spin size="large" />

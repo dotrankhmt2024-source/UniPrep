@@ -110,6 +110,15 @@ export interface LessonPublishState {
 	updatedAt: Date;
 }
 
+export interface LessonCompletionResult {
+	lessonId: string;
+	enrollmentId: string;
+	state: 'completed' | 'not_started';
+	completedAt: Date | null;
+	progressPercent: number;
+	createdLearningEventIds: string[];
+}
+
 /**
  * Nghiệp vụ chương/bài học/học liệu (E3-T2, E3-T4).
  *
@@ -510,6 +519,138 @@ export class LessonService {
 		await this.assertLessonViewable(lesson, course, actor);
 
 		return this.buildLessonDetail(lesson, section);
+	}
+
+	async completeLesson(
+		id: string,
+		timeSpentSeconds: number,
+		actor: AuthUser,
+	): Promise<LessonCompletionResult> {
+		const lesson = await this.findLessonOrFail(id);
+		const course = await this.courseAccess.findCourseOrFail(lesson.courseId);
+		await this.assertLessonViewable(lesson, course, actor);
+		const enrollment = await this.enrollments.findOne({
+			where: {
+				userId: actor.id,
+				courseId: lesson.courseId,
+				status: In(ACTIVE_ENROLLMENT_STATUS),
+			},
+		});
+		if (!enrollment) {
+			throw new ForbiddenException('Bạn chưa ghi danh khoá học này.');
+		}
+
+		const now = new Date();
+		let saved = await this.lessonProgress.findOne({
+			where: { enrollmentId: enrollment.id, lessonId: lesson.id },
+		});
+		if (saved?.status !== 'completed') {
+			await this.lessonProgress.upsert(
+				{
+					enrollmentId: enrollment.id,
+					userId: actor.id,
+					courseId: lesson.courseId,
+					lessonId: lesson.id,
+					status: 'completed',
+					firstViewedAt: saved?.firstViewedAt ?? now,
+					lastViewedAt: now,
+					completedAt: now,
+					timeSpentSeconds: (saved?.timeSpentSeconds ?? 0) + timeSpentSeconds,
+					lastPositionSeconds: null,
+					viewCount: saved?.viewCount ?? 1,
+				},
+				['enrollmentId', 'lessonId'],
+			);
+			saved = await this.lessonProgress.findOne({
+				where: { enrollmentId: enrollment.id, lessonId: lesson.id },
+			});
+		}
+		const progress = await this.refreshEnrollmentProgress(enrollment);
+
+		return {
+			lessonId: lesson.id,
+			enrollmentId: enrollment.id,
+			state: 'completed',
+			completedAt: saved?.completedAt ?? now,
+			progressPercent: progress,
+			createdLearningEventIds: [],
+		};
+	}
+
+	async uncompleteLesson(
+		id: string,
+		actor: AuthUser,
+	): Promise<LessonCompletionResult> {
+		const lesson = await this.findLessonOrFail(id);
+		const course = await this.courseAccess.findCourseOrFail(lesson.courseId);
+		await this.assertLessonViewable(lesson, course, actor);
+		const enrollment = await this.enrollments.findOne({
+			where: {
+				userId: actor.id,
+				courseId: lesson.courseId,
+				status: In(ACTIVE_ENROLLMENT_STATUS),
+			},
+		});
+		if (!enrollment) {
+			throw new ForbiddenException('Bạn chưa ghi danh khoá học này.');
+		}
+
+		const progress = await this.lessonProgress.findOne({
+			where: { enrollmentId: enrollment.id, lessonId: lesson.id },
+		});
+		if (progress) {
+			progress.status = 'not_started';
+			progress.completedAt = null;
+			await this.lessonProgress.save(progress);
+		}
+		const progressPercent = await this.refreshEnrollmentProgress(enrollment);
+
+		return {
+			lessonId: lesson.id,
+			enrollmentId: enrollment.id,
+			state: 'not_started',
+			completedAt: null,
+			progressPercent,
+			createdLearningEventIds: [],
+		};
+	}
+
+	private async refreshEnrollmentProgress(
+		enrollment: Enrollment,
+	): Promise<number> {
+		const totalLessons = await this.lessons.count({
+			where: {
+				courseId: enrollment.courseId,
+				isPublished: true,
+				deletedAt: IsNull(),
+			},
+		});
+		const completedLessons = await this.lessonProgress
+			.createQueryBuilder('progress')
+			.innerJoin(
+				Lesson,
+				'lesson',
+				'lesson.id = progress.lesson_id AND lesson.is_published = true AND lesson.deleted_at IS NULL',
+			)
+			.where('progress.enrollmentId = :enrollmentId', {
+				enrollmentId: enrollment.id,
+			})
+			.andWhere('progress.status = :status', { status: 'completed' })
+			.getCount();
+		const progressPercent = totalLessons
+			? Math.round((completedLessons / totalLessons) * 10000) / 100
+			: 0;
+		enrollment.progressPercent = progressPercent;
+		if (totalLessons > 0 && completedLessons === totalLessons) {
+			enrollment.status = 'completed';
+			enrollment.completedAt ??= new Date();
+		} else {
+			enrollment.status = 'active';
+			enrollment.completedAt = null;
+		}
+		enrollment.lastActivityAt = new Date();
+		await this.enrollments.save(enrollment);
+		return progressPercent;
 	}
 
 	/** `PATCH /api/lessons/:id` (E3-T2) — chỉ ghi khoá client thực sự gửi. */

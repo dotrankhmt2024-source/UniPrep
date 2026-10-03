@@ -1034,6 +1034,40 @@
 				"tags": ["Courses"]
 			}
 		},
+		"/api/courses/{id}/progress": {
+			"get": {
+				"operationId": "CourseController_getProgress",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Tiến độ tổng hợp theo khoá học",
+				"tags": ["Courses"]
+			}
+		},
 		"/api/courses/{id}/publish": {
 			"patch": {
 				"operationId": "CourseController_publish",
@@ -1427,6 +1461,74 @@
 			}
 		},
 		"/api/enrollments": {
+			"get": {
+				"operationId": "EnrollmentController_findAll",
+				"parameters": [
+					{
+						"name": "page",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"default": 1,
+							"example": 1,
+							"type": "number"
+						}
+					},
+					{
+						"name": "take",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"maximum": 100,
+							"default": 20,
+							"example": 20,
+							"type": "number"
+						}
+					},
+					{
+						"name": "order",
+						"required": false,
+						"in": "query",
+						"description": "Thứ tự sắp xếp theo trường `sortBy`.",
+						"schema": {
+							"default": "desc",
+							"type": "string",
+							"enum": ["asc", "desc"]
+						}
+					},
+					{
+						"name": "search",
+						"required": false,
+						"in": "query",
+						"description": "Từ khoá tìm kiếm (tuỳ endpoint quyết định tìm trên trường nào).",
+						"schema": {
+							"maxLength": 100,
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Danh sách ghi danh theo phạm vi người gọi",
+				"tags": ["Enrollments"]
+			},
 			"post": {
 				"operationId": "EnrollmentController_create",
 				"parameters": [],
@@ -1458,6 +1560,106 @@
 					}
 				],
 				"summary": "Đăng ký khoá học cho chính mình",
+				"tags": ["Enrollments"]
+			}
+		},
+		"/api/enrollments/{id}/progress": {
+			"get": {
+				"operationId": "EnrollmentController_getProgress",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Tiến độ chi tiết của một ghi danh",
+				"tags": ["Enrollments"]
+			}
+		},
+		"/api/enrollments/{id}": {
+			"get": {
+				"operationId": "EnrollmentController_findOne",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Chi tiết một ghi danh",
+				"tags": ["Enrollments"]
+			},
+			"delete": {
+				"operationId": "EnrollmentController_cancel",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Huỷ ghi danh của chính mình",
 				"tags": ["Enrollments"]
 			}
 		},
@@ -2034,6 +2236,82 @@
 					}
 				],
 				"summary": "Xoá bài học (xoá mềm, chặn khi đã có dữ liệu học tập)",
+				"tags": ["Lessons"]
+			}
+		},
+		"/api/lessons/{id}/complete": {
+			"post": {
+				"operationId": "LessonsController_complete",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CompleteLessonDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Đánh dấu hoàn thành bài học",
+				"tags": ["Lessons"]
+			},
+			"delete": {
+				"operationId": "LessonsController_uncomplete",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Bỏ đánh dấu hoàn thành bài học",
 				"tags": ["Lessons"]
 			}
 		},
@@ -2961,6 +3239,10 @@
 					}
 				},
 				"required": ["title"]
+			},
+			"CompleteLessonDto": {
+				"type": "object",
+				"properties": {}
 			},
 			"UpdateLessonDto": {
 				"type": "object",

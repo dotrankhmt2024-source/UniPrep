@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
 	BookOutlined,
+	FolderOpenOutlined,
 	IdcardOutlined,
 	ReadOutlined,
 	TeamOutlined,
@@ -28,6 +29,14 @@ export const sidebarMenu: SidebarItem[] = [
 		label: 'Khoá học',
 		icon: <BookOutlined />,
 		path: '/',
+		group: 'HỌC TẬP',
+	},
+	{
+		key: 'my-courses',
+		label: 'Khoá học của tôi',
+		icon: <FolderOpenOutlined />,
+		path: '/my-courses',
+		roles: ['student'],
 		group: 'HỌC TẬP',
 	},
 	{

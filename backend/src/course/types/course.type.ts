@@ -55,6 +55,57 @@ export interface MyEnrollmentSummary {
 	completedAt: Date | null;
 }
 
+export interface EnrollmentListItem extends MyEnrollmentSummary {
+	courseId: string;
+	course: { id: string; code: string; title: string; summary: string | null };
+	student: {
+		id: string;
+		fullName: string;
+		email: string;
+		studentCode: string | null;
+	};
+	completedLessons: number;
+	totalLessons: number;
+	resumeLessonId: string | null;
+	lastActivityAt: Date | null;
+}
+
+export interface EnrollmentLessonProgress {
+	lessonId: string;
+	title: string;
+	state: 'not_started' | 'in_progress' | 'completed';
+	completedAt: Date | null;
+	timeSpentSeconds: number;
+}
+
+export interface EnrollmentSectionProgress {
+	sectionId: string;
+	title: string;
+	completedLessons: number;
+	totalLessons: number;
+	lessons: EnrollmentLessonProgress[];
+}
+
+export interface EnrollmentProgress {
+	enrollmentId: string;
+	courseId: string;
+	progressPercent: number;
+	completedLessons: number;
+	totalLessons: number;
+	lastActivityAt: Date | null;
+	resumeLessonId: string | null;
+	sections: EnrollmentSectionProgress[];
+}
+
+export interface CourseProgressSummary {
+	courseId: string;
+	progressPercent: number;
+	completedLessons: number;
+	totalLessons: number;
+	lastActivityAt: Date | null;
+	resumeLessonId: string | null;
+}
+
 export interface CourseListItem {
 	id: string;
 	code: string;

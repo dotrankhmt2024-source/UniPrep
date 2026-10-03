@@ -3,6 +3,8 @@ import {
 	Controller,
 	Delete,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Param,
 	Patch,
 	Post,
@@ -17,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+import { CompleteLessonDto } from './dto/complete-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { FindLessonsQueryDto } from './dto/find-lessons-query.dto';
 import { ReorderDto } from './dto/reorder.dto';
@@ -27,6 +30,7 @@ import { UUID_V4_PIPE } from '../common/pipes/uuid-param.pipe';
 import { LESSON_MESSAGE } from './constants/lesson-message.constant';
 import type { AuthUser } from '../auth/types/authenticated-user.type';
 import type { LessonPublishState } from './lesson.service';
+import type { LessonCompletionResult } from './lesson.service';
 import type { LessonDetail, PaginatedLessons } from './types/lesson.type';
 
 /**
@@ -114,6 +118,38 @@ export class LessonsController {
 	): Promise<ApiResponseDto<LessonDetail>> {
 		const data = await this.lessonService.findLessonById(id, actor);
 		return buildSuccess(data);
+	}
+
+	@Post('lessons/:id/complete')
+	@HttpCode(HttpStatus.OK)
+	@Roles('student')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Đánh dấu hoàn thành bài học' })
+	@ApiOkResponse({ type: ApiResponseDto })
+	async complete(
+		@Param('id', UUID_V4_PIPE) id: string,
+		@Body() dto: CompleteLessonDto,
+		@CurrentUser() actor: AuthUser,
+	): Promise<ApiResponseDto<LessonCompletionResult>> {
+		const data = await this.lessonService.completeLesson(
+			id,
+			dto.timeSpentSeconds,
+			actor,
+		);
+		return buildSuccess(data, 'Đã đánh dấu hoàn thành bài học');
+	}
+
+	@Delete('lessons/:id/complete')
+	@Roles('student')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Bỏ đánh dấu hoàn thành bài học' })
+	@ApiOkResponse({ type: ApiResponseDto })
+	async uncomplete(
+		@Param('id', UUID_V4_PIPE) id: string,
+		@CurrentUser() actor: AuthUser,
+	): Promise<ApiResponseDto<LessonCompletionResult>> {
+		const data = await this.lessonService.uncompleteLesson(id, actor);
+		return buildSuccess(data, 'Đã bỏ đánh dấu hoàn thành');
 	}
 
 	@Patch('lessons/:id')

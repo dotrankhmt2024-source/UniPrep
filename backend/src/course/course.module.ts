@@ -7,6 +7,8 @@ import { CoursePrerequisite } from './entities/course-prerequisite.entity';
 import { CourseSection } from './entities/course-section.entity';
 import { Course } from './entities/course.entity';
 import { Enrollment } from './entities/enrollment.entity';
+import { LessonProgress } from '../lesson/entities/lesson-progress.entity';
+import { Lesson } from '../lesson/entities/lesson.entity';
 import { User } from '../user/entities/user.entity';
 import { CourseAccessService } from './course-access.service';
 import { CourseEligibilityService } from './course-eligibility.service';
@@ -44,6 +46,8 @@ import { EnrollmentService } from './enrollment.service';
 			CoursePrerequisite,
 			CourseSection,
 			Enrollment,
+			LessonProgress,
+			Lesson,
 			User,
 		]),
 	],
@@ -51,8 +55,8 @@ import { EnrollmentService } from './enrollment.service';
 		CategoryController,
 		CourseController,
 		CohortController,
-		// Ghi danh nằm cùng module vì nó là lát cắt tối thiểu của E4-T1 được kéo sang E3-T7 và dùng
-		// chung `CourseEligibilityService` (xem `EnrollmentService`). E4 sẽ mở rộng chính service này.
+		// EnrollmentService gom API ghi danh, tiến độ và hoàn thành bài; service dùng chung
+		// CourseEligibilityService cho luồng đăng ký.
 		EnrollmentController,
 	],
 	providers: [

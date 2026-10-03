@@ -17,10 +17,12 @@ import {
 	ApiTags,
 } from '@nestjs/swagger';
 import { CourseService } from './course.service';
+import { EnrollmentService } from './enrollment.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { PublishCourseDto } from './dto/publish-course.dto';
 import { FindCoursesQueryDto } from './dto/find-courses-query.dto';
+import { CourseProgressQueryDto } from './dto/course-progress-query.dto';
 import { AssignInstructorDto } from './dto/assign-instructor.dto';
 import { CreateCohortDto } from './dto/create-cohort.dto';
 import { ReplacePrerequisitesDto } from './dto/replace-prerequisites.dto';
@@ -36,6 +38,7 @@ import type {
 	CourseDetail,
 	CourseInstructorItem,
 	PaginatedCourses,
+	CourseProgressSummary,
 } from './types/course.type';
 
 /** `data` của ba endpoint đổi trạng thái (`publish`/`unpublish`). */
@@ -60,7 +63,10 @@ interface CourseStatusPatch {
 @ApiTags('Courses')
 @Controller('courses')
 export class CourseController {
-	constructor(private readonly courseService: CourseService) {}
+	constructor(
+		private readonly courseService: CourseService,
+		private readonly enrollmentService: EnrollmentService,
+	) {}
 
 	@Get()
 	@ApiBearerAuth()
@@ -101,6 +107,24 @@ export class CourseController {
 	): Promise<ApiResponseDto<CourseDetail>> {
 		const data = await this.courseService.findOne(id, actor);
 		return buildSuccess(data);
+	}
+
+	@Get(':id/progress')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Tiến độ tổng hợp theo khoá học' })
+	@ApiOkResponse({ type: ApiResponseDto })
+	async getProgress(
+		@Param('id', UUID_V4_PIPE) courseId: string,
+		@CurrentUser() actor: AuthUser,
+		@Query() query: CourseProgressQueryDto,
+	): Promise<ApiResponseDto<CourseProgressSummary>> {
+		return buildSuccess(
+			await this.enrollmentService.getCourseProgress(
+				courseId,
+				actor,
+				query.userId,
+			),
+		);
 	}
 
 	@Patch(':id')

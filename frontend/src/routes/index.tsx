@@ -5,6 +5,7 @@ import AuthLayout from '@/layouts/auth';
 import ProtectedRoute from './protected-route';
 
 const CourseListPage = lazy(() => import('@/pages/course-list'));
+const MyCoursesPage = lazy(() => import('@/pages/my-courses'));
 const CourseDetailPage = lazy(() => import('@/pages/course-detail'));
 const LessonViewerPage = lazy(() => import('@/pages/lesson-viewer'));
 const TeacherCourseListPage = lazy(() => import('@/pages/teacher/course-list'));
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
 				Component: PrivateLayout,
 				children: [
 					{ index: true, Component: CourseListPage },
+					{
+						element: <ProtectedRoute allowedRoles={['student']} />,
+						children: [{ path: 'my-courses', Component: MyCoursesPage }],
+					},
 					// E3-T7: chi tiết khoá học + đề cương + nút đăng ký (mọi vai trò đã đăng nhập).
 					{ path: 'courses/:courseId', Component: CourseDetailPage },
 					// E3-T8: trình xem nội dung bài học. Hai route cùng trỏ một trang: không có

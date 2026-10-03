@@ -400,6 +400,18 @@ user story Student ("Progress is tracked via completed lessons and quizzes").
 **DoD cấp epic E4:** một học viên có thể đi hết luồng đăng ký → học → đánh dấu hoàn thành → resume,
 và % phản ánh đúng trạng thái trong DB.
 
+> ### Trạng thái E4 — chốt ngày 2026-10-03
+>
+> **Đã xong E4-T1→T6.** Backend có danh sách/chi tiết/huỷ ghi danh, tiến độ theo ghi danh/khoá,
+> hoàn thành/bỏ hoàn thành idempotent và resume tới bài published đầu tiên chưa hoàn thành. Phần trăm
+> được tính trên bài published; huỷ chuyển `status='dropped'` và giữ progress, đăng ký lại mở cùng dòng.
+> Frontend có trang `/my-courses`, tiếp tục học theo `resumeLessonId`, thanh tiến độ và thao tác hoàn
+> thành trong viewer.
+>
+> **Kiểm chứng:** 4 unit tests và 1 HTTP e2e suite trên PostgreSQL test riêng; e2e bao phủ IDOR,
+> đăng ký/huỷ/đăng ký lại, complete lặp, 0%/50%/100% và bài bị unpublish. Quiz score, `learning_events`
+> và các trường `riskLevel` vẫn thuộc E5/E7/E9; `createdLearningEventIds` là mảng rỗng cho tới E7.
+
 ---
 
 ### E5 — Quiz & chấm điểm
@@ -688,8 +700,8 @@ Ma trận này nối **yêu cầu trong proposal** → **acceptance criteria / t
 
 | Yêu cầu / User story (proposal) | Acceptance criteria (trích §3.2) | Epic | Task ID | Trạng thái |
 |---|---|---|---|---|
-| **Student** — "I want to search for and enroll in courses, access learning materials, take practice quizzes, and track my learning progress, so that I can self-monitor my learning and receive early warnings when I fall behind." | "Students can search for, enroll in courses, and access published materials." | E3, E4 | E3-T3, E3-T6, E3-T7, E3-T8, E4-T1, E4-T4 | **Một phần** — E3-T3/T6/T7/T8 xong 2026-10-03 (tìm kiếm + ghi danh + xem học liệu đã publish) và `POST /api/enrollments` là lát cắt tối thiểu kéo từ E4-T1; còn E4-T1 (danh sách/huỷ/tiến độ) và E4-T4 |
-| (Student) | "Progress is tracked via completed lessons and quizzes." | E4, E5 | E4-T2, E4-T3, E4-T5, E5-T2, E5-T4, E5-T6, E5-T7 | Chưa bắt đầu |
+| **Student** — "I want to search for and enroll in courses, access learning materials, take practice quizzes, and track my learning progress, so that I can self-monitor my learning and receive early warnings when I fall behind." | "Students can search for, enroll in courses, and access published materials." | E3, E4 | E3-T3, E3-T6, E3-T7, E3-T8, E4-T1, E4-T4 | **Một phần** — E3-T3/T6/T7/T8 và E4-T1/T4 xong 2026-10-03; E4-T1/T4 có API đăng ký/danh sách/huỷ và trang khoá học của tôi. Quiz vẫn thuộc E5 |
+| (Student) | "Progress is tracked via completed lessons and quizzes." | E4, E5 | E4-T2, E4-T3, E4-T5, E5-T2, E5-T4, E5-T6, E5-T7 | **Một phần** — E4-T2/T3/T5 xong 2026-10-03 (tiến độ bài học + resume); quiz và điểm thuộc E5 |
 | (Student) | "Learning behavior and assessment results are utilized to detect risk and trigger in-app early warnings." | E7, E8, E9, E11 | E7-T1, E7-T2, E7-T4, E8-T3, E9-T2, E9-T6, E9-T9, E11-T1, E11-T2 | Chưa bắt đầu |
 | **Instructor** — "I want to view learner performance and early warning indicators on my dashboard, so that I can monitor learning progress and provide timely intervention for struggling learners." | "Instructors can monitor progress, assessment results, and learning behavior." | E3, E5, E8 | E3-T1, E3-T2, E3-T9, E5-T1, E5-T5, E5-T8, E8-T1, E8-T4, E8-T6, E8-T7 | **Một phần** — E3-T1/T2/T9 xong 2026-10-03 (soạn khoá học, chương–bài, upload học liệu, publish/ẩn; giảng viên chỉ sửa được khoá mình phụ trách); dashboard và dữ liệu học viên thuộc E5/E8 |
 | (Instructor) | "At-risk learners are highlighted along with contributing rationales on the dashboard." | E9, E10 | E9-T6, E9-T9, E10-T2, E10-T3 | Chưa bắt đầu |
@@ -703,7 +715,7 @@ Ma trận này nối **yêu cầu trong proposal** → **acceptance criteria / t
 |---|---|---|---|---|
 | **Tài khoản & phân quyền** | Đăng ký, đăng nhập/đăng xuất, khôi phục mật khẩu, hồ sơ người dùng, RBAC (Student/Instructor/Admin) trên mọi API, quản lý trạng thái tài khoản, audit log cho hành động quản trị | E1, E2, E12 | E1-T1, E1-T2, E1-T3, E1-T4, E1-T5, E1-T6, E1-T7, E1-T8, E2-T1, E2-T2, E2-T4, E2-T5, E12-T1 | **Gần đủ** — E1 xong (2026-10-03) và E2-T1/T2/T4/T5 xong (2026-10-03); thiếu audit log hành động quản trị (E12-T1) và các test tự động (E1-T9, e2e E1-T6, E2-T6 → hoãn sang E13) |
 | **Khoá học & nội dung** | Catalog có tìm kiếm/lọc/phân trang; trang chi tiết khoá (syllabus, giảng viên, điều kiện tiên quyết); cấu trúc chương–bài hỗ trợ văn bản, slide, video; giảng viên tạo/sửa/publish/ẩn nội dung | E3 | E3-T1, E3-T2, E3-T3, E3-T4, E3-T5, E3-T6, E3-T7, E3-T8, E3-T9 | **Xong (2026-10-03)** — E3-T1→T9 đã làm; E3-T10 (test quyền nội dung) đã kiểm chứng bằng script e2e 257 kiểm tra nhưng bản trong repo chuyển sang E13-T4. `mocks/course.ts` đã bị xoá |
-| **Học & đánh giá** | Đăng ký khoá, theo dõi tiến độ, quiz có giới hạn thời gian + chấm điểm tự động, phản hồi của giảng viên, diễn đàn thảo luận, telemetry hành vi (thời gian hoàn thành, số lần thử) | E4, E5, E6, E7 | E4-T1, E4-T2, E4-T3, E4-T4, E4-T5, E5-T1, E5-T2, E5-T3, E5-T4, E5-T5, E5-T6, E5-T7, E5-T8, E6-T1, E6-T2, E6-T3, E6-T4, E7-T1, E7-T2, E7-T3, E7-T4, E7-T5 | Chưa bắt đầu |
+| **Học & đánh giá** | Đăng ký khoá, theo dõi tiến độ, quiz có giới hạn thời gian + chấm điểm tự động, phản hồi của giảng viên, diễn đàn thảo luận, telemetry hành vi (thời gian hoàn thành, số lần thử) | E4, E5, E6, E7 | E4-T1, E4-T2, E4-T3, E4-T4, E4-T5, E5-T1, E5-T2, E5-T3, E5-T4, E5-T5, E5-T6, E5-T7, E5-T8, E6-T1, E6-T2, E6-T3, E6-T4, E7-T1, E7-T2, E7-T3, E7-T4, E7-T5 | **Một phần** — E4-T1→T6 xong 2026-10-03; quiz E5, thảo luận E6 và telemetry E7 chưa bắt đầu |
 | **AI analytics & cảnh báo sớm (Hướng 5)** | Pipeline phát hiện rủi ro tự động (FastAPI); dashboard giảng viên có giải thích ở mức feature; tin nhắn can thiệp trong ứng dụng | E8, E9, E10, E11 | E8-T1, E8-T2, E8-T3, E8-T4, E8-T5, E8-T6, E8-T7, E8-T8, E9-T1, E9-T2, E9-T3, E9-T4, E9-T5, E9-T6, E9-T7, E9-T8, E9-T9, E9-T10, E9-T11, E9-T12, E10-T1, E10-T2, E10-T3, E10-T4, E10-T5, E10-T6, E11-T1, E11-T2, E11-T3, E11-T4, E11-T5, E11-T6 | Chưa bắt đầu |
 | **Ngoài phạm vi (§3.1)** | Live-streaming classroom, MFA, cổng thanh toán tiền thật, nội dung bài học sinh tự động bằng AI | — | **Không có task** — nếu ai đề xuất, ghi vào backlog sau đồ án (mục 2.3) | Không áp dụng |
 
