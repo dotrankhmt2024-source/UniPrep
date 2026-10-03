@@ -1,0 +1,68 @@
+{
+	"openapi": "3.0.0",
+	"paths": {
+		"/api": {
+			"get": {
+				"operationId": "AppController_getHello",
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["App"]
+			}
+		},
+		"/api/health": {
+			"get": {
+				"operationId": "HealthController_check",
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"summary": "Kiểm tra tình trạng service và kết nối database",
+				"tags": ["Health"]
+			}
+		}
+	},
+	"info": {
+		"title": "UniPrep API Docs",
+		"description": "UniPrep API documentation",
+		"version": "1.0",
+		"contact": {}
+	},
+	"tags": [],
+	"servers": [],
+	"components": {
+		"securitySchemes": {
+			"bearer": {
+				"scheme": "bearer",
+				"bearerFormat": "JWT",
+				"type": "http"
+			}
+		},
+		"schemas": {
+			"ApiResponseDto": {
+				"type": "object",
+				"properties": {
+					"error": {
+						"type": "boolean",
+						"example": false
+					},
+					"data": {
+						"type": "object",
+						"description": "Payload data (object, array, primitive) or null",
+						"nullable": true
+					},
+					"message": {
+						"type": "string",
+						"example": "Success"
+					}
+				},
+				"required": ["error", "message"]
+			}
+		}
+	}
+}

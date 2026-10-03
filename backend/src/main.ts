@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import {
 	BadRequestException,
 	ValidationError,
@@ -10,6 +10,7 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
 import { ApiResponseDto } from './common/dto/api-response.dto';
+import { buildSwaggerConfig, SWAGGER_PATH } from './config/swagger.config';
 
 const flattenValidationErrors = (
 	errors: ValidationError[],
@@ -82,21 +83,14 @@ async function bootstrap() {
 	app.useGlobalInterceptors(new TransformResponseInterceptor());
 	app.useGlobalFilters(new AllExceptionsFilter());
 
-	const swaggerConfig = new DocumentBuilder()
-		.setTitle(configService.get<string>('SWAGGER_TITLE', 'UniPrep API'))
-		.setDescription(
-			configService.get<string>(
-				'SWAGGER_DESCRIPTION',
-				'UniPrep API documentation',
-			),
-		)
-		.setVersion(configService.get<string>('SWAGGER_VERSION', '1.0'))
-		.addBearerAuth()
-		.build();
-	const document = SwaggerModule.createDocument(app, swaggerConfig, {
-		extraModels: [ApiResponseDto],
-	});
-	const swaggerPath = 'docs';
+	const document = SwaggerModule.createDocument(
+		app,
+		buildSwaggerConfig(configService),
+		{
+			extraModels: [ApiResponseDto],
+		},
+	);
+	const swaggerPath = SWAGGER_PATH;
 	SwaggerModule.setup(swaggerPath, app, document, {
 		swaggerOptions: { persistAuthorization: true },
 	});
