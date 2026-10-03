@@ -339,8 +339,11 @@ export class AuthService {
 			dto.currentPassword,
 			user.passwordHash,
 		);
+		// `400` chứ không `401`: người dùng ĐÃ xác thực thành công, chỉ có dữ liệu gửi lên sai. Trả
+		// `401` còn kéo theo hệ quả ở FE — interceptor coi mọi `401` là "access token hết hạn" nên sẽ
+		// xoay refresh token vô ích mỗi lần người dùng gõ nhầm mật khẩu cũ (xem E2-T1, DoD ghi rõ 400).
 		if (!matches) {
-			throw new UnauthorizedException(AUTH_MESSAGE.wrongCurrentPassword);
+			throw new BadRequestException(AUTH_MESSAGE.wrongCurrentPassword);
 		}
 
 		// So sánh bằng hash chứ không so chuỗi: người dùng có thể gõ lại mật khẩu cũ với hoa/thường
