@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
-import { StudentModule } from './student/student.module';
 
 @Module({
 	imports: [
@@ -21,13 +20,19 @@ import { StudentModule } from './student/student.module';
 				username: config.get<string>('DB_USERNAME'),
 				password: config.get<string>('DB_PASSWORD'),
 				database: config.get<string>('DB_NAME'),
+				uuidExtension: 'pgcrypto',
 				autoLoadEntities: true,
-				synchronize: true,
+				// Schema chỉ được đổi qua migration (xem src/database/data-source.ts và
+				// docs/02-specs/database-design.md §9) — bật synchronize ở bất kỳ môi
+				// trường nào cũng có thể xoá cột/dữ liệu ngoài ý muốn.
+				synchronize: false,
+				migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
+				migrationsTableName: 'typeorm_migrations',
+				migrationsRun: false,
 				logging: false,
 			}),
 		}),
 		HealthModule,
-		StudentModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
