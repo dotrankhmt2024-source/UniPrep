@@ -7,7 +7,7 @@ import {
 	type MenuProps,
 } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { IconBtn, IOutLinedBtn } from '@/components';
 import Icon from '@/components/Icon';
 import { useAuth } from '@/contexts/auth-context';
@@ -56,7 +56,8 @@ const Header = ({
 			{
 				key: 'profile',
 				icon: <Icon name="person" size={16} />,
-				label: 'Hồ sơ cá nhân',
+				// `<Link>` thật (không điều hướng bằng tay) để mở được tab mới và giữ hành vi chuột giữa.
+				label: <Link to="/profile">Hồ sơ cá nhân</Link>,
 			},
 			{
 				key: 'settings',
@@ -75,13 +76,8 @@ const Header = ({
 	);
 
 	const handleAccountMenuClick: MenuProps['onClick'] = ({ key }) => {
-		if (key === 'logout') {
-			void handleLogout();
-			return;
-		}
-
-		// Trang hồ sơ thuộc E2 — ở E1 chỉ điều hướng tới route đã định.
-		if (key === 'profile') navigate('/profile');
+		// Mục "Hồ sơ cá nhân" là `<Link>` nên tự điều hướng; ở đây chỉ còn việc đăng xuất.
+		if (key === 'logout') void handleLogout();
 	};
 
 	return (

@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react';
-import { BookOutlined, ReadOutlined } from '@ant-design/icons';
+import {
+	BookOutlined,
+	IdcardOutlined,
+	ReadOutlined,
+	TeamOutlined,
+} from '@ant-design/icons';
 import type { UserRole } from '@/types';
 
 /**
@@ -31,6 +36,22 @@ export const sidebarMenu: SidebarItem[] = [
 		icon: <ReadOutlined />,
 		path: '/courses/79738_CO2004_010915_CQ',
 		group: 'HỌC TẬP',
+	},
+	{
+		key: 'profile',
+		label: 'Hồ sơ cá nhân',
+		icon: <IdcardOutlined />,
+		path: '/profile',
+		group: 'TÀI KHOẢN',
+	},
+	{
+		key: 'admin-users',
+		label: 'Quản lý người dùng',
+		icon: <TeamOutlined />,
+		path: '/admin/users',
+		// Chỉ admin thấy mục này; `filterSidebarByRole` lọc menu, `ProtectedRoute` chặn cả route.
+		roles: ['admin'],
+		group: 'QUẢN TRỊ',
 	},
 ];
 
