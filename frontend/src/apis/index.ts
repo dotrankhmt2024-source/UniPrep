@@ -12,6 +12,7 @@
  * Lưu ý: `queryMethod` KHÔNG export ở đây — dùng `import { queryMethod } from '@/config'`.
  */
 export * from './auth';
+export * from './assessment';
 export * from './category';
 export * from './course';
 export * from './enrollment';

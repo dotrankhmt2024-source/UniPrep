@@ -10,6 +10,7 @@ import { UserModule } from './user/user.module';
 import { CourseModule } from './course/course.module';
 import { LessonModule } from './lesson/lesson.module';
 import { StorageModule } from './storage/storage.module';
+import { ExerciseModule } from './exercise/exercise.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -48,6 +49,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 		CourseModule,
 		LessonModule,
 		StorageModule,
+		ExerciseModule,
 		HealthModule,
 	],
 	controllers: [AppController],

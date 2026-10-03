@@ -458,6 +458,17 @@ const CourseDetailPage = () => {
 						onGoToLearn={() => navigate(`/courses/${courseId}/learn`)}
 					/>
 
+					<Link
+						to={`/courses/${courseId}/quizzes`}
+						className="flex items-center justify-between gap-space-sm border-y border-outline-variant py-space-md font-label-md text-secondary hover:underline"
+					>
+						<span className="inline-flex items-center gap-2">
+							<Icon name="quiz" size={18} />
+							Bài kiểm tra
+						</span>
+						<Icon name="arrow_forward" size={18} />
+					</Link>
+
 					<section className="space-y-space-md rounded-xl border border-outline-variant bg-surface-container-lowest p-space-md shadow-sm">
 						<h2 className="font-title-md font-title-md font-semibold text-on-surface">
 							Nội dung khoá học

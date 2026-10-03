@@ -8,9 +8,14 @@ const CourseListPage = lazy(() => import('@/pages/course-list'));
 const MyCoursesPage = lazy(() => import('@/pages/my-courses'));
 const CourseDetailPage = lazy(() => import('@/pages/course-detail'));
 const LessonViewerPage = lazy(() => import('@/pages/lesson-viewer'));
+const CourseQuizzesPage = lazy(() => import('@/pages/course-quizzes'));
+const QuizPage = lazy(() => import('@/pages/quiz'));
 const TeacherCourseListPage = lazy(() => import('@/pages/teacher/course-list'));
 const TeacherCourseEditorPage = lazy(
 	() => import('@/pages/teacher/course-editor'),
+);
+const TeacherQuizManagerPage = lazy(
+	() => import('@/pages/teacher/quiz-manager'),
 );
 const ProfilePage = lazy(() => import('@/pages/profile'));
 const AdminUsersPage = lazy(() => import('@/pages/admin/users'));
@@ -53,6 +58,8 @@ const router = createBrowserRouter([
 					},
 					// E3-T7: chi tiết khoá học + đề cương + nút đăng ký (mọi vai trò đã đăng nhập).
 					{ path: 'courses/:courseId', Component: CourseDetailPage },
+					{ path: 'courses/:courseId/quizzes', Component: CourseQuizzesPage },
+					{ path: 'quizzes/:quizId', Component: QuizPage },
 					// E3-T8: trình xem nội dung bài học. Hai route cùng trỏ một trang: không có
 					// `:lessonId` thì trang tự chọn bài đã publish đầu tiên và thay URL.
 					{
@@ -77,6 +84,10 @@ const router = createBrowserRouter([
 							{
 								path: 'teacher/courses/:courseId',
 								Component: TeacherCourseEditorPage,
+							},
+							{
+								path: 'teacher/courses/:courseId/quizzes',
+								Component: TeacherQuizManagerPage,
 							},
 						],
 					},

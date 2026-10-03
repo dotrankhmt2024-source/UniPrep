@@ -226,6 +226,14 @@ const TeacherCourseEditorPage = () => {
 				</ErrorBadge>
 			)}
 
+			<Link
+				to={`/teacher/courses/${courseId}/quizzes`}
+				className="inline-flex items-center gap-2 border-y border-outline-variant py-space-sm font-label-md text-secondary hover:underline"
+			>
+				<Icon name="quiz" size={18} />
+				Ngân hàng câu hỏi & bài kiểm tra
+			</Link>
+
 			<div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-space-md shadow-sm">
 				<Tabs
 					// Không dùng `destroyOnHidden`: form metadata và ô chọn tiên quyết giữ nguyên
