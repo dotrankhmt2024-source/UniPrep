@@ -25,17 +25,21 @@ export interface SidebarItem {
 export const sidebarMenu: SidebarItem[] = [
 	{
 		key: 'course-list',
-		label: 'Các khoá học của tôi',
+		label: 'Khoá học',
 		icon: <BookOutlined />,
 		path: '/',
 		group: 'HỌC TẬP',
 	},
 	{
-		key: 'course-content',
-		label: 'Nội dung khoá học',
+		key: 'teacher-courses',
+		label: 'Soạn nội dung',
 		icon: <ReadOutlined />,
-		path: '/courses/79738_CO2004_010915_CQ',
-		group: 'HỌC TẬP',
+		// Trước E3 mục này trỏ cứng vào một ID khoá học giả trong `src/mocks/course.ts`
+		// (`/courses/79738_CO2004_010915_CQ`). Mock đã bị xoá ở E3-T6 nên menu trỏ tới khu soạn
+		// nội dung thật; giảng viên vào đó chọn khoá mình phụ trách.
+		path: '/teacher/courses',
+		roles: ['teacher', 'admin'],
+		group: 'GIẢNG DẠY',
 	},
 	{
 		key: 'profile',

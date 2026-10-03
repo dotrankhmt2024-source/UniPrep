@@ -5,7 +5,12 @@ import AuthLayout from '@/layouts/auth';
 import ProtectedRoute from './protected-route';
 
 const CourseListPage = lazy(() => import('@/pages/course-list'));
-const CourseContentPage = lazy(() => import('@/pages/course-content'));
+const CourseDetailPage = lazy(() => import('@/pages/course-detail'));
+const LessonViewerPage = lazy(() => import('@/pages/lesson-viewer'));
+const TeacherCourseListPage = lazy(() => import('@/pages/teacher/course-list'));
+const TeacherCourseEditorPage = lazy(
+	() => import('@/pages/teacher/course-editor'),
+);
 const ProfilePage = lazy(() => import('@/pages/profile'));
 const AdminUsersPage = lazy(() => import('@/pages/admin/users'));
 const LoginPage = lazy(() => import('@/pages/auth/login'));
@@ -41,9 +46,35 @@ const router = createBrowserRouter([
 				Component: PrivateLayout,
 				children: [
 					{ index: true, Component: CourseListPage },
-					{ path: 'courses/:courseId', Component: CourseContentPage },
+					// E3-T7: chi tiết khoá học + đề cương + nút đăng ký (mọi vai trò đã đăng nhập).
+					{ path: 'courses/:courseId', Component: CourseDetailPage },
+					// E3-T8: trình xem nội dung bài học. Hai route cùng trỏ một trang: không có
+					// `:lessonId` thì trang tự chọn bài đã publish đầu tiên và thay URL.
+					{
+						path: 'courses/:courseId/learn',
+						Component: LessonViewerPage,
+					},
+					{
+						path: 'courses/:courseId/learn/:lessonId',
+						Component: LessonViewerPage,
+					},
 					// Hồ sơ cá nhân (E2-T4): mọi vai trò đã đăng nhập đều sửa được hồ sơ của mình.
 					{ path: 'profile', Component: ProfilePage },
+					// Khu soạn nội dung (E3-T9): chỉ giảng viên và admin. Giảng viên vẫn chỉ sửa
+					// được khoá mình phụ trách — điều đó do tầng service quyết định, không phải route.
+					{
+						element: <ProtectedRoute allowedRoles={['teacher', 'admin']} />,
+						children: [
+							{
+								path: 'teacher/courses',
+								Component: TeacherCourseListPage,
+							},
+							{
+								path: 'teacher/courses/:courseId',
+								Component: TeacherCourseEditorPage,
+							},
+						],
+					},
 					// Quản lý người dùng (E2-T5): chỉ admin — bọc thêm một `ProtectedRoute` có
 					// `allowedRoles` nằm TRONG layout private để người sai vai trò vẫn thấy layout
 					// và được đưa về trang chủ kèm thông báo, thay vì màn hình trắng.

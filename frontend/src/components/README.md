@@ -57,8 +57,9 @@ Không tự dựng header/sidebar/menu trong page. Muốn thêm mục menu → s
 5. **Không** viết `<span className="material-symbols-outlined">…</span>` → dùng `Icon`.
 6. Error/lỗi API hiển thị bằng `ErrorBadge` (kèm `Icon name="error"`), không dùng div trần.
 7. Luồng dữ liệu chuẩn của một module: `apis/<feature>` → `types/<feature>` → `pages/<feature>`.
-   Trang đang chạy theo đúng luồng này: `src/pages/course-list/index.tsx` + `src/apis` (hiện còn đọc
-   `src/mocks/course.ts`; E3-T6 sẽ thay bằng API thật).
+   Trang đang chạy theo đúng luồng này: `src/pages/course-list/index.tsx` + `src/apis/course`.
+   **`src/mocks/course.ts` đã bị xoá ở E3-T6** — từ E3, catalog, chi tiết khoá học, trình xem bài học
+   và khu soạn nội dung của giảng viên đều đọc API thật (DoD cấp epic E3).
 
 ## Ví dụ nhanh
 
