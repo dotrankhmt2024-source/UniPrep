@@ -10,9 +10,7 @@
 						"description": ""
 					}
 				},
-				"tags": [
-					"App"
-				]
+				"tags": ["App"]
 			}
 		},
 		"/api/auth/register": {
@@ -42,9 +40,7 @@
 					}
 				},
 				"summary": "Đăng ký tài khoản mới (mặc định vai trò học viên)",
-				"tags": [
-					"Auth"
-				]
+				"tags": ["Auth"]
 			}
 		},
 		"/api/auth/login": {
@@ -74,9 +70,7 @@
 					}
 				},
 				"summary": "Đăng nhập và nhận cặp access/refresh token",
-				"tags": [
-					"Auth"
-				]
+				"tags": ["Auth"]
 			}
 		},
 		"/api/auth/refresh": {
@@ -106,9 +100,7 @@
 					}
 				},
 				"summary": "Làm mới access token bằng refresh token (rotation)",
-				"tags": [
-					"Auth"
-				]
+				"tags": ["Auth"]
 			}
 		},
 		"/api/auth/logout": {
@@ -143,9 +135,7 @@
 					}
 				],
 				"summary": "Thu hồi refresh token hiện tại (hoặc mọi phiên)",
-				"tags": [
-					"Auth"
-				]
+				"tags": ["Auth"]
 			}
 		},
 		"/api/auth/forgot-password": {
@@ -175,9 +165,7 @@
 					}
 				},
 				"summary": "Yêu cầu đặt lại mật khẩu (luôn trả cùng kết quả)",
-				"tags": [
-					"Auth"
-				]
+				"tags": ["Auth"]
 			}
 		},
 		"/api/auth/reset-password": {
@@ -207,9 +195,7 @@
 					}
 				},
 				"summary": "Đặt lại mật khẩu bằng token một lần",
-				"tags": [
-					"Auth"
-				]
+				"tags": ["Auth"]
 			}
 		},
 		"/api/auth/change-password": {
@@ -244,9 +230,7 @@
 					}
 				],
 				"summary": "Đổi mật khẩu của người dùng đang đăng nhập",
-				"tags": [
-					"Auth"
-				]
+				"tags": ["Auth"]
 			}
 		},
 		"/api/auth/me": {
@@ -271,9 +255,166 @@
 					}
 				],
 				"summary": "Hồ sơ người dùng đang đăng nhập",
-				"tags": [
-					"Auth"
-				]
+				"tags": ["Auth"]
+			}
+		},
+		"/api/users/me": {
+			"get": {
+				"operationId": "UserController_getMe",
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Xem hồ sơ của chính mình",
+				"tags": ["Users"]
+			},
+			"patch": {
+				"operationId": "UserController_updateMe",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateMyProfileDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Cập nhật hồ sơ của chính mình",
+				"tags": ["Users"]
+			}
+		},
+		"/api/users": {
+			"get": {
+				"operationId": "UserController_findAll",
+				"parameters": [
+					{
+						"name": "page",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"default": 1,
+							"example": 1,
+							"type": "number"
+						}
+					},
+					{
+						"name": "take",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"maximum": 100,
+							"default": 20,
+							"example": 20,
+							"type": "number"
+						}
+					},
+					{
+						"name": "order",
+						"required": false,
+						"in": "query",
+						"description": "Thứ tự sắp xếp theo trường `sortBy`.",
+						"schema": {
+							"default": "desc",
+							"type": "string",
+							"enum": ["asc", "desc"]
+						}
+					},
+					{
+						"name": "search",
+						"required": false,
+						"in": "query",
+						"description": "Từ khoá tìm kiếm (tuỳ endpoint quyết định tìm trên trường nào).",
+						"schema": {
+							"maxLength": 100,
+							"type": "string"
+						}
+					},
+					{
+						"name": "role",
+						"required": false,
+						"in": "query",
+						"description": "student: Học viên · teacher: Giảng viên · admin: Quản trị viên",
+						"schema": {
+							"type": "string",
+							"enum": ["student", "teacher", "admin"]
+						}
+					},
+					{
+						"name": "status",
+						"required": false,
+						"in": "query",
+						"description": "pending: Chờ kích hoạt · active: Đang hoạt động · suspended: Tạm khoá · disabled: Đã vô hiệu hoá",
+						"schema": {
+							"type": "string",
+							"enum": ["pending", "active", "suspended", "disabled"]
+						}
+					},
+					{
+						"name": "sortBy",
+						"required": false,
+						"in": "query",
+						"description": "Trường sắp xếp; luôn có `id` làm khoá phụ để phân trang ổn định.",
+						"schema": {
+							"default": "createdAt",
+							"type": "string",
+							"enum": ["createdAt", "fullName", "email"]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Danh sách người dùng có lọc và phân trang (chỉ admin)",
+				"tags": ["Users"]
 			}
 		},
 		"/api/users/{id}": {
@@ -307,9 +448,7 @@
 					}
 				],
 				"summary": "Xem hồ sơ một người dùng (chính chủ hoặc admin)",
-				"tags": [
-					"Users"
-				]
+				"tags": ["Users"]
 			}
 		},
 		"/api/users/{id}/status": {
@@ -353,9 +492,51 @@
 					}
 				],
 				"summary": "Đổi trạng thái tài khoản (chỉ admin)",
-				"tags": [
-					"Users"
-				]
+				"tags": ["Users"]
+			}
+		},
+		"/api/users/{id}/role": {
+			"patch": {
+				"operationId": "UserController_updateRole",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateUserRoleDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Đổi vai trò người dùng (chỉ admin)",
+				"tags": ["Users"]
 			}
 		},
 		"/api/health": {
@@ -368,9 +549,7 @@
 					}
 				},
 				"summary": "Kiểm tra tình trạng service và kết nối database",
-				"tags": [
-					"Health"
-				]
+				"tags": ["Health"]
 			}
 		}
 	},
@@ -418,11 +597,7 @@
 						"maxLength": 50
 					}
 				},
-				"required": [
-					"email",
-					"password",
-					"fullName"
-				]
+				"required": ["email", "password", "fullName"]
 			},
 			"ApiResponseDto": {
 				"type": "object",
@@ -441,10 +616,7 @@
 						"example": "Success"
 					}
 				},
-				"required": [
-					"error",
-					"message"
-				]
+				"required": ["error", "message"]
 			},
 			"LoginDto": {
 				"type": "object",
@@ -459,10 +631,7 @@
 						"minLength": 1
 					}
 				},
-				"required": [
-					"email",
-					"password"
-				]
+				"required": ["email", "password"]
 			},
 			"RefreshTokenDto": {
 				"type": "object",
@@ -473,9 +642,7 @@
 						"description": "Refresh token nhận được từ lần đăng nhập/refresh trước đó"
 					}
 				},
-				"required": [
-					"refreshToken"
-				]
+				"required": ["refreshToken"]
 			},
 			"LogoutDto": {
 				"type": "object",
@@ -494,9 +661,7 @@
 						"example": "sv2026001@hcmut.edu.vn"
 					}
 				},
-				"required": [
-					"email"
-				]
+				"required": ["email"]
 			},
 			"ResetPasswordDto": {
 				"type": "object",
@@ -511,10 +676,7 @@
 						"example": "Abcd@1234"
 					}
 				},
-				"required": [
-					"token",
-					"password"
-				]
+				"required": ["token", "password"]
 			},
 			"ChangePasswordDto": {
 				"type": "object",
@@ -528,29 +690,58 @@
 						"example": "Xyz@9876"
 					}
 				},
-				"required": [
-					"currentPassword",
-					"newPassword"
-				]
+				"required": ["currentPassword", "newPassword"]
+			},
+			"UpdateMyProfileDto": {
+				"type": "object",
+				"properties": {
+					"fullName": {
+						"type": "string",
+						"example": "Nguyễn Văn An",
+						"maxLength": 255
+					},
+					"phone": {
+						"type": "object",
+						"example": "0907654321",
+						"nullable": true,
+						"description": "Số điện thoại Việt Nam (10 số, hoặc +84...) — gửi null để xoá."
+					},
+					"major": {
+						"type": "object",
+						"example": "Kỹ thuật phần mềm",
+						"maxLength": 255
+					},
+					"bio": {
+						"type": "object",
+						"example": "Sinh viên năm 3",
+						"maxLength": 1000,
+						"description": "Giới thiệu ngắn — gửi null để xoá."
+					}
+				}
 			},
 			"UpdateUserStatusDto": {
 				"type": "object",
 				"properties": {
 					"status": {
 						"type": "string",
-						"enum": [
-							"pending",
-							"active",
-							"suspended",
-							"disabled"
-						],
+						"enum": ["pending", "active", "suspended", "disabled"],
 						"example": "suspended",
 						"description": "pending: Chờ kích hoạt · active: Đang hoạt động · suspended: Tạm khoá · disabled: Đã vô hiệu hoá"
 					}
 				},
-				"required": [
-					"status"
-				]
+				"required": ["status"]
+			},
+			"UpdateUserRoleDto": {
+				"type": "object",
+				"properties": {
+					"role": {
+						"type": "string",
+						"enum": ["student", "teacher", "admin"],
+						"example": "teacher",
+						"description": "student: Học viên · teacher: Giảng viên · admin: Quản trị viên"
+					}
+				},
+				"required": ["role"]
 			}
 		}
 	}

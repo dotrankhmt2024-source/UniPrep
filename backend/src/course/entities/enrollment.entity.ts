@@ -53,9 +53,9 @@ export class Enrollment extends BaseEntityCustom {
 	@JoinColumn({ name: 'course_id' })
 	course: Course;
 
-	// TODO(E2-T3): thêm FK tới cohorts khi bảng được tạo ở epic E2 — `cohorts`
-	// không thuộc baseline nên hiện chỉ khai báo cột uuid nullable, KHÔNG tạo
-	// relation (tránh import entity chưa tồn tại).
+	// TODO(E3, chuyển từ E2-T3 ngày 2026-10-03): thêm FK tới `cohorts` khi bảng được tạo.
+	// `cohorts` có FK `course_id → courses` nên chỉ làm được sau E3-T1; vì vậy hiện chỉ khai báo cột
+	// uuid nullable, KHÔNG tạo relation (tránh import entity chưa tồn tại).
 	@Column({ type: 'uuid', name: 'cohort_id', nullable: true })
 	cohortId: string | null;
 
