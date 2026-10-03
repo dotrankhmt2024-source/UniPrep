@@ -56,9 +56,18 @@ export const AUDIT_LOG_STATUS_LABEL: Record<AuditLogStatus, string> = {
 /**
  * `refresh_tokens.revoked_reason` (§3.1.2) — bảng liệt kê 4 giá trị nhưng không
  * ghi CHECK; vẫn giữ union để service không ghi giá trị lạ.
+ *
+ * E1-T4 bổ sung `password_reset` / `password_changed`: khi người dùng đặt lại hoặc
+ * đổi mật khẩu, mọi phiên đang hoạt động bị thu hồi (§5.2) và cần phân biệt được
+ * lý do đó với `logout`/`admin_revoke` khi truy vết sự cố.
  */
 export type RefreshTokenRevokedReason =
-	'logout' | 'rotated' | 'reuse_detected' | 'admin_revoke';
+	| 'logout'
+	| 'rotated'
+	| 'reuse_detected'
+	| 'admin_revoke'
+	| 'password_reset'
+	| 'password_changed';
 
 export const REFRESH_TOKEN_REVOKED_REASON_LABEL: Record<
 	RefreshTokenRevokedReason,
@@ -68,6 +77,8 @@ export const REFRESH_TOKEN_REVOKED_REASON_LABEL: Record<
 	rotated: 'Đã xoay token',
 	reuse_detected: 'Phát hiện dùng lại token cũ',
 	admin_revoke: 'Quản trị viên thu hồi',
+	password_reset: 'Đặt lại mật khẩu',
+	password_changed: 'Đổi mật khẩu',
 };
 
 /**

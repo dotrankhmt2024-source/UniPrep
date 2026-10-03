@@ -8,6 +8,23 @@ export type UserRole = 'student' | 'teacher' | 'admin';
 
 export type UserStatus = 'pending' | 'active' | 'suspended' | 'disabled';
 
+/**
+ * Danh sách giá trị dạng mảng — cần cho `@IsIn()` của DTO và cho Swagger `enum`, những nơi đòi
+ * giá trị lúc chạy trong khi union type bị xoá sau khi biên dịch.
+ */
+export const USER_ROLE_VALUES = [
+	'student',
+	'teacher',
+	'admin',
+] as const satisfies readonly UserRole[];
+
+export const USER_STATUS_VALUES = [
+	'pending',
+	'active',
+	'suspended',
+	'disabled',
+] as const satisfies readonly UserStatus[];
+
 export const USER_ROLE_LABEL: Record<UserRole, string> = {
 	student: 'Học viên',
 	teacher: 'Giảng viên',

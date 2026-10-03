@@ -10,7 +10,352 @@
 						"description": ""
 					}
 				},
-				"tags": ["App"]
+				"tags": [
+					"App"
+				]
+			}
+		},
+		"/api/auth/register": {
+			"post": {
+				"operationId": "AuthController_register",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"summary": "Đăng ký tài khoản mới (mặc định vai trò học viên)",
+				"tags": [
+					"Auth"
+				]
+			}
+		},
+		"/api/auth/login": {
+			"post": {
+				"operationId": "AuthController_login",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/LoginDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"summary": "Đăng nhập và nhận cặp access/refresh token",
+				"tags": [
+					"Auth"
+				]
+			}
+		},
+		"/api/auth/refresh": {
+			"post": {
+				"operationId": "AuthController_refresh",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RefreshTokenDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"summary": "Làm mới access token bằng refresh token (rotation)",
+				"tags": [
+					"Auth"
+				]
+			}
+		},
+		"/api/auth/logout": {
+			"post": {
+				"operationId": "AuthController_logout",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/LogoutDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Thu hồi refresh token hiện tại (hoặc mọi phiên)",
+				"tags": [
+					"Auth"
+				]
+			}
+		},
+		"/api/auth/forgot-password": {
+			"post": {
+				"operationId": "AuthController_forgotPassword",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ForgotPasswordDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"summary": "Yêu cầu đặt lại mật khẩu (luôn trả cùng kết quả)",
+				"tags": [
+					"Auth"
+				]
+			}
+		},
+		"/api/auth/reset-password": {
+			"post": {
+				"operationId": "AuthController_resetPassword",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ResetPasswordDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"summary": "Đặt lại mật khẩu bằng token một lần",
+				"tags": [
+					"Auth"
+				]
+			}
+		},
+		"/api/auth/change-password": {
+			"post": {
+				"operationId": "AuthController_changePassword",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ChangePasswordDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Đổi mật khẩu của người dùng đang đăng nhập",
+				"tags": [
+					"Auth"
+				]
+			}
+		},
+		"/api/auth/me": {
+			"get": {
+				"operationId": "AuthController_me",
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Hồ sơ người dùng đang đăng nhập",
+				"tags": [
+					"Auth"
+				]
+			}
+		},
+		"/api/users/{id}": {
+			"get": {
+				"operationId": "UserController_getById",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Xem hồ sơ một người dùng (chính chủ hoặc admin)",
+				"tags": [
+					"Users"
+				]
+			}
+		},
+		"/api/users/{id}/status": {
+			"patch": {
+				"operationId": "UserController_updateStatus",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateUserStatusDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Đổi trạng thái tài khoản (chỉ admin)",
+				"tags": [
+					"Users"
+				]
 			}
 		},
 		"/api/health": {
@@ -23,7 +368,9 @@
 					}
 				},
 				"summary": "Kiểm tra tình trạng service và kết nối database",
-				"tags": ["Health"]
+				"tags": [
+					"Health"
+				]
 			}
 		}
 	},
@@ -44,6 +391,39 @@
 			}
 		},
 		"schemas": {
+			"RegisterDto": {
+				"type": "object",
+				"properties": {
+					"email": {
+						"type": "string",
+						"example": "sv2026001@hcmut.edu.vn",
+						"description": "Email đăng nhập, không phân biệt hoa/thường",
+						"maxLength": 255
+					},
+					"password": {
+						"type": "string",
+						"example": "Abcd@1234",
+						"description": "Chính sách mật khẩu ở §5.1 (8–16 ký tự, hoa, thường, số, ký tự đặc biệt)"
+					},
+					"fullName": {
+						"type": "string",
+						"example": "Nguyễn Văn A",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"studentCode": {
+						"type": "string",
+						"example": "SV2026001",
+						"description": "Chỉ dùng khi tạo học viên; duy nhất nếu có",
+						"maxLength": 50
+					}
+				},
+				"required": [
+					"email",
+					"password",
+					"fullName"
+				]
+			},
 			"ApiResponseDto": {
 				"type": "object",
 				"properties": {
@@ -61,7 +441,116 @@
 						"example": "Success"
 					}
 				},
-				"required": ["error", "message"]
+				"required": [
+					"error",
+					"message"
+				]
+			},
+			"LoginDto": {
+				"type": "object",
+				"properties": {
+					"email": {
+						"type": "string",
+						"example": "sv2026001@hcmut.edu.vn"
+					},
+					"password": {
+						"type": "string",
+						"example": "Abcd@1234",
+						"minLength": 1
+					}
+				},
+				"required": [
+					"email",
+					"password"
+				]
+			},
+			"RefreshTokenDto": {
+				"type": "object",
+				"properties": {
+					"refreshToken": {
+						"type": "string",
+						"example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+						"description": "Refresh token nhận được từ lần đăng nhập/refresh trước đó"
+					}
+				},
+				"required": [
+					"refreshToken"
+				]
+			},
+			"LogoutDto": {
+				"type": "object",
+				"properties": {
+					"refreshToken": {
+						"type": "string",
+						"description": "Refresh token của phiên cần kết thúc; bỏ trống để kết thúc mọi phiên"
+					}
+				}
+			},
+			"ForgotPasswordDto": {
+				"type": "object",
+				"properties": {
+					"email": {
+						"type": "string",
+						"example": "sv2026001@hcmut.edu.vn"
+					}
+				},
+				"required": [
+					"email"
+				]
+			},
+			"ResetPasswordDto": {
+				"type": "object",
+				"properties": {
+					"token": {
+						"type": "string",
+						"example": "4f2a9c1d8b3e5a7f0c6d2e4b8a1f3c5d",
+						"description": "Token một lần nhận từ email (dev: ghi ra log của server)"
+					},
+					"password": {
+						"type": "string",
+						"example": "Abcd@1234"
+					}
+				},
+				"required": [
+					"token",
+					"password"
+				]
+			},
+			"ChangePasswordDto": {
+				"type": "object",
+				"properties": {
+					"currentPassword": {
+						"type": "string",
+						"example": "Abcd@1234"
+					},
+					"newPassword": {
+						"type": "string",
+						"example": "Xyz@9876"
+					}
+				},
+				"required": [
+					"currentPassword",
+					"newPassword"
+				]
+			},
+			"UpdateUserStatusDto": {
+				"type": "object",
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"pending",
+							"active",
+							"suspended",
+							"disabled"
+						],
+						"example": "suspended",
+						"description": "pending: Chờ kích hoạt · active: Đang hoạt động · suspended: Tạm khoá · disabled: Đã vô hiệu hoá"
+					}
+				},
+				"required": [
+					"status"
+				]
 			}
 		}
 	}
