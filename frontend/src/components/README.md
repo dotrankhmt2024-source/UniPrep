@@ -22,9 +22,7 @@
 
 ```tsx
 const SomePage = () => (
-  <div className="p-gutter space-y-space-lg">
-    {/* nội dung */}
-  </div>
+	<div className="p-gutter space-y-space-lg">{/* nội dung */}</div>
 );
 ```
 
@@ -32,19 +30,19 @@ Không tự dựng header/sidebar/menu trong page. Muốn thêm mục menu → s
 
 ## Danh sách component
 
-| Component | Import | Dùng để làm gì |
-|---|---|---|
-| `ISolidBtn` | `@/components` | Nút chính (filled). `background="default" \| "primary" \| "error"` |
-| `IOutLinedBtn` | `@/components` | Nút phụ (outlined). `mode="default" \| "primary" \| "error"` |
-| `IconBtn` | `@/components` | Nút chỉ có icon (row action, đóng modal, toggle…) |
-| `FormItem` | `@/components` | Field trong `<Form>`: `formItemProps` + `rules` + `inputProps`, hoặc truyền `children` là control khác |
-| `ITable` | `@/components` | Bảng dữ liệu (bọc antd Table: STT tự động, scroll ngang, phân trang) |
-| `PasswordInput` | `@/components` | Field "Mật khẩu" + policy 8–16 ký tự, hoa/thường/số/ký tự đặc biệt |
-| `ConfirmPassword` | `@/components` | Field "Xác nhận mật khẩu", cần truyền `form` instance |
-| `RichTextEditor` | `@/components` | Editor HTML (TipTap), controlled qua `value` / `onChange`, dùng được trong `Form.Item` |
-| `Badge` | `@/components` | Pill trạng thái. `status="success" \| "warning" \| "error" \| "info" \| "neutral" \| "processing"` |
-| `ErrorBadge` | `@/components` | `Badge` với `status="error"` — dùng để hiển thị lỗi validate/API |
-| `Icon` | `@/components` | Wrapper Material Symbols: `<Icon name="school" size={18} />` |
+| Component         | Import         | Dùng để làm gì                                                                                         |
+| ----------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
+| `ISolidBtn`       | `@/components` | Nút chính (filled). `background="default" \| "primary" \| "error"`                                     |
+| `IOutLinedBtn`    | `@/components` | Nút phụ (outlined). `mode="default" \| "primary" \| "error"`                                           |
+| `IconBtn`         | `@/components` | Nút chỉ có icon (row action, đóng modal, toggle…)                                                      |
+| `FormItem`        | `@/components` | Field trong `<Form>`: `formItemProps` + `rules` + `inputProps`, hoặc truyền `children` là control khác |
+| `ITable`          | `@/components` | Bảng dữ liệu (bọc antd Table: STT tự động, scroll ngang, phân trang)                                   |
+| `PasswordInput`   | `@/components` | Field "Mật khẩu" + policy 8–16 ký tự, hoa/thường/số/ký tự đặc biệt                                     |
+| `ConfirmPassword` | `@/components` | Field "Xác nhận mật khẩu", cần truyền `form` instance                                                  |
+| `RichTextEditor`  | `@/components` | Editor HTML (TipTap), controlled qua `value` / `onChange`, dùng được trong `Form.Item`                 |
+| `Badge`           | `@/components` | Pill trạng thái. `status="success" \| "warning" \| "error" \| "info" \| "neutral" \| "processing"`     |
+| `ErrorBadge`      | `@/components` | `Badge` với `status="error"` — dùng để hiển thị lỗi validate/API                                       |
+| `Icon`            | `@/components` | Wrapper Material Symbols: `<Icon name="school" size={18} />`                                           |
 
 `ITable` yêu cầu prop `pagination` (`{ total, pageSize, current, onChange }` hoặc `false`).
 
@@ -59,15 +57,19 @@ Không tự dựng header/sidebar/menu trong page. Muốn thêm mục menu → s
 5. **Không** viết `<span className="material-symbols-outlined">…</span>` → dùng `Icon`.
 6. Error/lỗi API hiển thị bằng `ErrorBadge` (kèm `Icon name="error"`), không dùng div trần.
 7. Luồng dữ liệu chuẩn của một module: `apis/<feature>` → `types/<feature>` → `pages/<feature>`.
-   Xem ví dụ hoàn chỉnh ở `src/pages/student/index.tsx`.
+   Trang đang chạy theo đúng luồng này: `src/pages/course-list/index.tsx` + `src/apis` (hiện còn đọc
+   `src/mocks/course.ts`; E3-T6 sẽ thay bằng API thật).
 
 ## Ví dụ nhanh
+
+> `Learner` dưới đây chỉ là type minh hoạ — thay bằng type thật của feature bạn đang viết.
 
 ```tsx
 import { Form, Select, type TableProps } from 'antd';
 import { Badge, ErrorBadge, FormItem, ITable, ISolidBtn, IOutLinedBtn } from '@/components';
+import type { Learner } from '@/types';
 
-const columns: TableProps<Student>['columns'] = [
+const columns: TableProps<Learner>['columns'] = [
   { title: 'Mã SV', dataIndex: 'studentCode' },
   {
     title: 'Trạng thái',
@@ -76,7 +78,7 @@ const columns: TableProps<Student>['columns'] = [
   },
 ];
 
-<ITable<Student> columns={columns} dataSource={rows} loading={isLoading} pagination={false} rowKey="id" />
+<ITable<Learner> columns={columns} dataSource={rows} loading={isLoading} pagination={false} rowKey="id" />
 
 <Form layout="vertical">
   <FormItem formItemProps={{ label: 'Mã SV', name: 'studentCode' }} rules={[{ required: true }]} />

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { BookOutlined, ReadOutlined, TeamOutlined } from '@ant-design/icons';
+import { BookOutlined, ReadOutlined } from '@ant-design/icons';
 
 /**
  * Single source of truth for the private-layout navigation.
@@ -28,13 +28,6 @@ export const sidebarMenu: SidebarItem[] = [
 		icon: <ReadOutlined />,
 		path: '/courses/79738_CO2004_010915_CQ',
 		group: 'HỌC TẬP',
-	},
-	{
-		key: 'students',
-		label: 'Sinh viên (module mẫu)',
-		icon: <TeamOutlined />,
-		path: '/students',
-		group: 'QUẢN TRỊ',
 	},
 ];
 

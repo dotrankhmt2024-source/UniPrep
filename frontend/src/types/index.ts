@@ -24,5 +24,4 @@ export interface PageOptions {
 	take?: number;
 }
 
-export * from './student';
 export * from './course';
