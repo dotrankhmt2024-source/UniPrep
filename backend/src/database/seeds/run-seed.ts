@@ -5,6 +5,8 @@ import type { DataSource, EntityManager, ObjectLiteral } from 'typeorm';
 import { AppDataSource } from '../data-source';
 import { AlertSetting } from '../../admin/entities/alert-setting.entity';
 import { Category } from '../../course/entities/category.entity';
+import { Cohort } from '../../course/entities/cohort.entity';
+import { CourseInstructor } from '../../course/entities/course-instructor.entity';
 import { Course } from '../../course/entities/course.entity';
 import { CourseSection } from '../../course/entities/course-section.entity';
 import { Enrollment } from '../../course/entities/enrollment.entity';
@@ -354,6 +356,73 @@ async function seed() {
 			`courses: ${COURSE_FIXTURES.length}, sections: ${sections.length}, lessons: ${lessons.length}, materials: ${materials.length}, quiz: ${quizzes.length}, questions: ${questions.length}, options: ${options.length}`,
 		);
 
+		// ------------------------------------- cohorts, phân công giảng viên (E3)
+		// Trước E3 hai bảng này chưa tồn tại nên seed không có dữ liệu cho chúng, và E2-T3 (phạm vi
+		// dữ liệu giảng viên) không thể kiểm chứng. Nay mỗi khoá có 2 lớp (L01/L02), chủ sở hữu có
+		// một dòng `course_instructors` vai trò `owner`, và giảng viên còn lại được phân công phụ
+		// trách **một lớp** — đúng dữ liệu mà `database-design.md` §9.3 mục 5 yêu cầu để kiểm thử
+		// RBAC theo lớp ở E8.
+		const cohortIdByCourseAndClass = new Map<string, string>();
+		const cohorts: Array<Partial<Cohort>> = [];
+		const instructorAssignments: Array<Partial<CourseInstructor>> = [];
+		const COHORT_CLASS_CODES = ['L01', 'L02'];
+
+		COURSE_FIXTURES.forEach((fixture, courseIndex) => {
+			const courseId = courseIdByCode.get(fixture.code) as string;
+			const ownerId = teacherIds[courseIndex % teacherIds.length];
+			const coTeacherId = teacherIds[(courseIndex + 1) % teacherIds.length];
+
+			instructorAssignments.push({
+				id: seededUuid(`instructor:${fixture.code}:owner`),
+				courseId,
+				userId: ownerId,
+				cohortId: null,
+				roleInCourse: 'owner',
+				assignedBy: adminId,
+				assignedAt: daysAgo(60, 9, 0),
+			});
+
+			COHORT_CLASS_CODES.forEach((classCode, classIndex) => {
+				const cohortId = seededUuid(`cohort:${fixture.code}:${classCode}`);
+				cohortIdByCourseAndClass.set(`${fixture.code}:${classCode}`, cohortId);
+				cohorts.push({
+					id: cohortId,
+					courseId,
+					groupCode: 'CQ_HK261',
+					classCode,
+					name: `${fixture.code} — Lớp ${String(classIndex + 1).padStart(2, '0')}`,
+					semester: '1/2026-2027',
+					startsOn: '2026-09-07',
+					endsOn: '2027-01-16',
+				});
+			});
+
+			instructorAssignments.push({
+				id: seededUuid(`instructor:${fixture.code}:${coTeacherId}:L01`),
+				courseId,
+				userId: coTeacherId,
+				cohortId: cohortIdByCourseAndClass.get(`${fixture.code}:L01`),
+				roleInCourse: 'co_instructor',
+				assignedBy: adminId,
+				assignedAt: daysAgo(58, 9, 0),
+			});
+		});
+
+		await upsertChunked(manager, Cohort, cohorts);
+		await upsertChunked(manager, CourseInstructor, instructorAssignments);
+		log(
+			`cohorts: ${cohorts.length}, phân công giảng viên: ${instructorAssignments.length}`,
+		);
+
+		/** Chia học viên vào hai lớp theo chỉ số — ổn định giữa các lần chạy seed. */
+		const cohortIdFor = (
+			courseCode: string,
+			studentIndex: number,
+		): string | null =>
+			cohortIdByCourseAndClass.get(
+				`${courseCode}:${studentIndex % 2 === 0 ? 'L01' : 'L02'}`,
+			) ?? null;
+
 		// ---------------------------------------- enrollments, progress, events
 		const primaryCode = COURSE_FIXTURES[0].code;
 		const primaryCourseId = courseIdByCode.get(primaryCode) as string;
@@ -479,6 +548,7 @@ async function seed() {
 				id: seededUuid(`enrollment:${studentKey}:${primaryCode}`),
 				userId: studentId,
 				courseId: primaryCourseId,
+				cohortId: cohortIdFor(primaryCode, studentIndex),
 				status:
 					completedCount === primaryLessons.length ? 'completed' : 'active',
 				source: 'self',
@@ -564,6 +634,7 @@ async function seed() {
 			id: seededUuid(`enrollment:student-demo:${primaryCode}`),
 			userId: demoStudentId,
 			courseId: primaryCourseId,
+			cohortId: cohortIdByCourseAndClass.get(`${primaryCode}:L01`) ?? null,
 			status: 'active',
 			source: 'self',
 			enrolledAt: daysAgo(14, 8, 0),
@@ -599,6 +670,7 @@ async function seed() {
 				id: seededUuid(`enrollment:${studentKey}:${secondaryCode}`),
 				userId: seededUuid(`user:${studentKey}`),
 				courseId: secondaryCourseId,
+				cohortId: cohortIdFor(secondaryCode, studentIndex),
 				status: 'active',
 				source: 'self',
 				enrolledAt,

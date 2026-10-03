@@ -2,6 +2,7 @@ import { Check, Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntityCustom } from '../../common/entities/base-custom.entity';
 import { EnrollmentStatus } from '../../common/types';
 import { Course } from '../../course/entities/course.entity';
+import { Cohort } from '../../course/entities/cohort.entity';
 import { User } from '../../user/entities/user.entity';
 
 /**
@@ -53,11 +54,15 @@ export class Enrollment extends BaseEntityCustom {
 	@JoinColumn({ name: 'course_id' })
 	course: Course;
 
-	// TODO(E3, chuyển từ E2-T3 ngày 2026-10-03): thêm FK tới `cohorts` khi bảng được tạo.
-	// `cohorts` có FK `course_id → courses` nên chỉ làm được sau E3-T1; vì vậy hiện chỉ khai báo cột
-	// uuid nullable, KHÔNG tạo relation (tránh import entity chưa tồn tại).
+	// FK tới `cohorts` đã có từ E3 (trước đó bảng `cohorts` chưa tồn tại nên chỉ khai báo cột
+	// uuid trần — xem TODO đã gỡ ở E3-T1).
 	@Column({ type: 'uuid', name: 'cohort_id', nullable: true })
 	cohortId: string | null;
+
+	/** Xoá lớp không được xoá ghi danh: học viên vẫn học khoá, chỉ mất thông tin lớp (§4.2). */
+	@ManyToOne(() => Cohort, { onDelete: 'SET NULL', nullable: true })
+	@JoinColumn({ name: 'cohort_id' })
+	cohort: Cohort | null;
 
 	@Column({ type: 'varchar', name: 'status', length: 20, default: 'active' })
 	status: EnrollmentStatus;
