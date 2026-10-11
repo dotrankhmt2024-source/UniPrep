@@ -1,5 +1,4 @@
 import { Suspense, useMemo } from 'react';
-import { Provider } from 'react-redux';
 import { StyleProvider } from '@ant-design/cssinjs';
 import { ConfigProvider, Spin } from 'antd';
 import viVN from 'antd/locale/vi_VN';
@@ -7,8 +6,6 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { useAppTheme } from '@/contexts/theme';
-import { AuthProvider } from '@/contexts/auth-provider';
-import { store } from '@/store';
 import { getAntdTheme } from '@/config/antd-theme';
 import AppRoutes from '@/routes';
 import './styles/theme.css';
@@ -40,13 +37,9 @@ const ThemedApp = () => {
 
 const App = () => {
 	return (
-		<Provider store={store}>
-			<ThemeProvider>
-				<AuthProvider>
-					<ThemedApp />
-				</AuthProvider>
-			</ThemeProvider>
-		</Provider>
+		<ThemeProvider>
+			<ThemedApp />
+		</ThemeProvider>
 	);
 };
 
