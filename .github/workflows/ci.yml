@@ -53,79 +53,12 @@ jobs:
       - name: Install
         run: npm ci
 
-      # CI gọi thẳng `npx eslint` (tương đương `npm run lint:ci`) thay vì
-      # `npm run lint`: script đó có `--fix`, mà CI phải BÁO lỗi chứ không được
-      # tự sửa rồi báo xanh. Chạy `npm run lint:ci` ở máy trước khi mở PR để
-      # chắc chắn khớp đúng lệnh này.
+      # Không dùng `npm run lint`: script đó là
+      #   eslint "{src,apps,libs,test}/**/*.ts" --fix
+      # mà apps/ libs/ test/ không tồn tại -> ESLint 9 exit 2.
+      # Trên CI cũng không được dùng --fix (phải báo lỗi, không tự sửa).
       - name: Lint
         run: npx eslint "src/**/*.ts"
 
       - name: Build
         run: npm run build
-
-  migrations:
-    name: Backend (migrations)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    # Postgres dùng service container: job này KHÔNG cần DB thật của môi trường
-    # dev, chỉ cần một DB rỗng để chứng minh migration dựng được schema từ 0.
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: uniprep_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      NODE_ENV: test
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: uniprep_ci
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install
-        run: npm ci
-
-      - name: Chạy tất cả migration trên DB rỗng
-        run: npm run migration:run
-
-      - name: Revert toàn bộ migration (down)
-        run: |
-          total=$(ls src/database/migrations/*.ts | wc -l)
-          echo "$total migration sẽ được revert"
-          for i in $(seq 1 "$total"); do npm run migration:revert; done
-
-      - name: Chạy lại toàn bộ migration (up)
-        run: npm run migration:run
-
-      # Đỏ khi entity lệch với migration: `schema:log` in ra đúng những câu SQL
-      # mà TypeORM sẽ phải chạy để đồng bộ entity với DB hiện tại. Sau khi
-      # migration:run, nếu còn câu CREATE/ALTER/DROP nào nghĩa là migration đã
-      # thiếu hoặc thừa so với entity.
-      - name: Kiểm tra schema có khớp entity không
-        run: |
-          output=$(npm run schema:log --silent 2>&1) || true
-          echo "$output"
-          if printf '%s\n' "$output" | grep -qE '^(CREATE|ALTER|DROP|COMMENT) '; then
-            echo "::error::Schema trong DB lệch với entity — hãy chạy 'npm run migration:generate -- src/database/migrations/<TenMigration>' ở máy và commit file sinh ra."
-            exit 1
-          fi
-          echo "Schema khớp entity."

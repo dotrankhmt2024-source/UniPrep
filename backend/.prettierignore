@@ -1,6 +1,0 @@
-# Sinh tự động, không format lại — chạy `npm run openapi:export` để cập nhật.
-openapi.json
-
-# Build & coverage
-dist
-coverage

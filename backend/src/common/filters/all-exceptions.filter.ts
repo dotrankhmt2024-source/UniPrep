@@ -6,15 +6,20 @@ import {
 	HttpStatus,
 } from '@nestjs/common';
 import { buildError } from '../dto/api-response.dto';
-import { HTTP_FALLBACK_MESSAGES } from '../constants/http-message.constant';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-	/**
-	 * Message dùng chung với các guard (xem `common/constants/http-message.constant.ts`) — 401 do
-	 * guard ném ra và 401 do filter sinh ra phải là **cùng một câu**.
-	 */
-	private readonly fallbackMessages = HTTP_FALLBACK_MESSAGES;
+	private readonly fallbackMessages: Record<number, string> = {
+		[HttpStatus.BAD_REQUEST]: 'Dữ liệu gửi lên không hợp lệ.',
+		[HttpStatus.UNAUTHORIZED]: 'Bạn chưa đăng nhập hoặc phiên đã hết hạn.',
+		[HttpStatus.FORBIDDEN]: 'Bạn không có quyền thực hiện thao tác này.',
+		[HttpStatus.NOT_FOUND]: 'Không tìm thấy dữ liệu yêu cầu.',
+		[HttpStatus.CONFLICT]: 'Dữ liệu đang xung đột, vui lòng kiểm tra lại.',
+		[HttpStatus.TOO_MANY_REQUESTS]:
+			'Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.',
+		[HttpStatus.INTERNAL_SERVER_ERROR]:
+			'Hệ thống đang bận. Vui lòng thử lại sau.',
+	};
 
 	private normalizeMessage(status: number, rawMessage: string) {
 		const message = (rawMessage || '').trim();
