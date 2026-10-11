@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { DownloadOutlined } from '@ant-design/icons';
 import { Form, message } from 'antd';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { ErrorBadge, FormItem, ISolidBtn, PasswordInput } from '@/components';
@@ -96,24 +95,12 @@ const LoginPage = () => {
 					type="primary"
 					htmlType="submit"
 					size="large"
-					style={{ height: 52, padding: '0 24px' }}
 					block
 					loading={isSubmitting}
 				>
 					Đăng nhập
 				</ISolidBtn>
 			</Form>
-
-			<ISolidBtn
-				href="/testing_guild.md"
-				download="UniPrep-testing-guide.md"
-				icon={<DownloadOutlined />}
-				size="large"
-				style={{ height: 52, marginTop: 12, padding: '0 24px' }}
-				block
-			>
-				Tải hướng dẫn cho tester
-			</ISolidBtn>
 
 			<p className="text-center font-body-sm font-body-sm text-on-surface-variant">
 				Chưa có tài khoản?{' '}
