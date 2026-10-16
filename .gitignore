@@ -1,0 +1,10 @@
+# Dependency cài ở gốc repo (husky + lint-staged)
+node_modules/
+
+# Log
+*.log
+
+# Biến môi trường — chỉ commit .env.example
+.env
+.env.local
+.env.*.local

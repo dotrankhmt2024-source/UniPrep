@@ -1,0 +1,5 @@
+#!/bin/sh
+# Hook chạy trước mỗi commit: chỉ lint/format các file được stage (xem
+# `lint-staged.config.mjs` ở gốc repo). Cài hook bằng `npm install` ở gốc repo
+# (script `prepare` chạy `husky`).
+npx lint-staged

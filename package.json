@@ -1,0 +1,16 @@
+{
+	"name": "uniprep",
+	"version": "0.0.0",
+	"private": true,
+	"description": "UniPrep — script tiện dụng ở gốc repo và git hook (husky + lint-staged). Backend và frontend vẫn là hai package độc lập, KHÔNG dùng npm workspaces.",
+	"scripts": {
+		"prepare": "husky",
+		"lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
+		"lint:ci": "npm run lint:ci --prefix backend && npm run lint --prefix frontend",
+		"build": "npm run build --prefix backend && npm run build --prefix frontend"
+	},
+	"devDependencies": {
+		"husky": "^9.1.7",
+		"lint-staged": "^16.1.6"
+	}
+}
