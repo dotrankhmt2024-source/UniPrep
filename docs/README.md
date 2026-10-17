@@ -122,6 +122,10 @@ Muốn thay đổi, phải sửa cả `architecture.md` lẫn các tài liệu l
 | D13 | Tên bảng/cột trong Postgres: **snake_case, số nhiều, tiếng Anh**; field TS: camelCase (mọi `@Column` ghi rõ `name`) | repo thật (`student.entity.ts`) | |
 | D14 | **Phạm vi sản phẩm lấy theo `proposal.md`**: UniPrep là **nền tảng hỗ trợ học tập** (khoá học, chương/bài, học liệu, quiz, tiến độ, thảo luận, analytics). **Không** có phần học tiếng Anh, luyện nói/viết, chấm phát âm | `proposal.md` §1.1, §3.1 | Chốt 2026-09-26 — xem §6.2 |
 | D15 | Tên sản phẩm: **UniPrep** (không dùng "EduLMS Portal") | Chốt với nhóm 2026-09-26 | Dùng cho UI, báo cáo, tài liệu |
+| D16 | **Bài tập có hình thức nộp** (`quizzes.submission_mode`: `quiz` \| `file` \| `mixed`) thay vì tách entity `Assignment` riêng; bảng bài nộp vẫn là `submissions` | Chốt khi làm yêu cầu 4.4 (2026-10-16) | "Bài tập" đã được ánh xạ = `quizzes` (§7.7 của `02-specs/database-design.md`). Tạo entity riêng sẽ phải chép lại toàn bộ luồng attempt/submit/late/feedback/analytics đang chạy tốt. `submission_mode` còn cho phép thêm giá trị mới mà không phá dữ liệu cũ |
+| D17 | **Tệp bài nộp phục vụ qua endpoint có xác thực** (`GET /api/submission-files/:id/download`), **không** dùng thư mục tĩnh `/uploads/**` như học liệu | Chốt khi làm yêu cầu 4.4 (2026-10-16) | `/uploads/**` là `useStaticAssets`, không đi qua guard nào ⇒ ai có URL là tải được. Với học liệu (nội dung giảng viên muốn công bố) điều đó chấp nhận được; với bài làm cá nhân của học viên thì là rò rỉ dữ liệu. `storage_key` cũng vì vậy **không** được trả ra API |
+| D18 | **Chấm tự động chỉ áp cho phần trắc nghiệm**; bài nộp tệp đi `submitted` → giảng viên chốt `graded`. Chốt bài mà bỏ trống điểm ⇒ `400` | Chốt khi làm yêu cầu 4.4 (2026-10-16) | Nếu cho phép, hệ thống sẽ có bài `graded` với `score = NULL`; analytics đọc thành 0 và học viên thấy "đã chấm" mà không có điểm. Chặn ở đường ghi rẻ hơn nhiều so với đi dọn dữ liệu sai |
+| D19 | Chế độ `file`/`mixed` **cho nộp muộn** và ghi `is_late = true`; chế độ `quiz` giữ nguyên việc đóng cứng theo `due_at` | Chốt khi làm yêu cầu 4.4 (2026-10-16) | Bài nộp tệp thường là báo cáo/đồ án: chặn cứng khiến học viên mất luôn cơ hội nộp, trong khi giá trị sư phạm nằm ở việc **biết** bài nào nộp muộn |
 
 ### 3.1 Điểm lệch giữa các nguồn (đã xử lý)
 
@@ -222,6 +226,13 @@ docs" là **quyết định cuối cùng**; hai điểm X1 và X3 đã được 
   viên. Frontend có danh sách quiz, làm bài với timer + lưu nháp cục bộ, kết quả và khu giảng viên tạo
   đề/quản lý câu hỏi/xem bài nộp. Không cần migration; schema E5 đã nằm trong baseline. Quiz score đã
   sẵn sàng cho feature store E8; learning events và early warning vẫn thuộc E7/E8/E9/E11.
+- **Bài tập nộp tệp (E5 mở rộng, 2026-10-16 — yêu cầu 4.4):** `quizzes.submission_mode`
+  (`quiz`/`file`/`mixed`) + bảng `submission_files`; API upload/list/delete/**download có xác thực**;
+  bài nộp tệp đi `submitted` → giảng viên chốt điểm (`PATCH …/feedback`); FE có khu nộp tệp, xem kết
+  quả, **lịch sử làm bài của học viên**, và khu giảng viên tải tệp để chấm. Migration
+  `1792164517382-AddSubmissionFilesAndQuizMode` (đã kiểm chứng `up → revert → up` + `schema:log` rỗng).
+  Quyết định D16–D19 ở §3. Sửa kèm lỗi tên tệp tiếng Việt bị mojibake cho **cả** học liệu lẫn bài nộp.
+  **Chưa làm:** tự luận chữ (`short_answer`/`essay`) và dọn tệp mồ côi trên đĩa khi xoá khoá học.
 
 ---
 

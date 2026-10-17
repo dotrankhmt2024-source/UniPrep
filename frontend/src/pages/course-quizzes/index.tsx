@@ -4,13 +4,23 @@ import { Link, useParams } from 'react-router';
 import { getQuizzes } from '@/apis/assessment';
 import { Badge, ErrorBadge, Icon } from '@/components';
 import { getApiErrorMessage } from '@/config/query-method/axiosMethod.config';
+import { useAuth } from '@/contexts/auth-context';
 import type { AssessmentQuiz } from '@/types';
 
 const CourseQuizzesPage = () => {
 	const { courseId = '' } = useParams<{ courseId: string }>();
+	const { user } = useAuth();
 	const [items, setItems] = useState<AssessmentQuiz[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
+
+	/**
+	 * Giảng viên/admin **không** làm bài ở đây (`startQuizAttempt` yêu cầu role `student`), nên thay vì
+	 * mời họ bấm "Bắt đầu" rồi vào một trang làm bài vô nghĩa, trang này đưa thẳng họ sang khu chấm
+	 * điểm. Điều kiện là "chắc chắn không phải student" để lúc phiên đang nạp (`user === null`) học
+	 * viên thật vẫn thấy đúng giao diện của mình.
+	 */
+	const canManage = !!user && user.role !== 'student';
 
 	useEffect(() => {
 		let cancelled = false;
@@ -46,7 +56,9 @@ const CourseQuizzesPage = () => {
 				← Về khoá học
 			</Link>
 			<header>
-				<p className="font-label-md text-primary">HỌC TẬP</p>
+				<p className="font-label-md text-primary">
+					{canManage ? 'GIẢNG DẠY' : 'HỌC TẬP'}
+				</p>
 				<h1 className="mt-1 font-headline-md text-on-surface">Bài kiểm tra</h1>
 			</header>
 			{error && (
@@ -94,7 +106,15 @@ const CourseQuizzesPage = () => {
 									{quiz.totalPoints} điểm
 								</p>
 							</div>
-							{quiz.status === 'published' ? (
+							{canManage ? (
+								<Link
+									to={`/teacher/courses/${courseId}/quizzes`}
+									className="inline-flex items-center gap-2 font-label-md text-secondary hover:underline"
+								>
+									<Icon name="grading" size={18} />
+									Chấm bài &amp; quản lý
+								</Link>
+							) : quiz.status === 'published' ? (
 								<Link
 									to={`/quizzes/${quiz.id}`}
 									className="inline-flex items-center gap-2 font-label-md text-secondary hover:underline"
@@ -104,7 +124,9 @@ const CourseQuizzesPage = () => {
 								</Link>
 							) : (
 								<span className="font-body-sm text-on-surface-variant">
-									Chưa mở cho học viên
+									{quiz.status === 'closed'
+										? 'Đã đóng với học viên'
+										: 'Chưa mở cho học viên'}
 								</span>
 							)}
 						</article>

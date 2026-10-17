@@ -1,6 +1,6 @@
 import { Check, Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntityCustom } from '../../common/entities/base-custom.entity';
-import { QuizType } from '../../common/types';
+import { QuizType, SubmissionMode } from '../../common/types';
 import { Course } from '../../course/entities/course.entity';
 import { CourseSection } from '../../course/entities/course-section.entity';
 import { Lesson } from '../../lesson/entities/lesson.entity';
@@ -33,6 +33,11 @@ const numericTransformer = {
 	'chk_quizzes_show_answers_after',
 	`"show_answers_after" IN ('never', 'after_submit', 'after_due')`,
 )
+@Check(
+	'chk_quizzes_submission_mode',
+	`"submission_mode" IN ('quiz', 'file', 'mixed')`,
+)
+@Check('chk_quizzes_max_score', '"max_score" IS NULL OR "max_score" > 0')
 export class Quiz extends BaseEntityCustom {
 	@Column({ type: 'uuid', name: 'course_id' })
 	courseId: string;
@@ -107,6 +112,35 @@ export class Quiz extends BaseEntityCustom {
 		default: 'after_submit',
 	})
 	showAnswersAfter: string;
+
+	/**
+	 * Hình thức nộp (yêu cầu 4.4). `quiz` giữ nguyên hành vi cũ nên mọi dữ liệu có trước
+	 * migration đều đúng nghĩa mà không cần backfill.
+	 */
+	@Column({
+		type: 'varchar',
+		name: 'submission_mode',
+		length: 20,
+		default: 'quiz',
+	})
+	submissionMode: SubmissionMode;
+
+	/**
+	 * Điểm tối đa của **phần nộp tệp**: với `file` là toàn bộ điểm của bài, với `mixed` là phần
+	 * cộng thêm vào tổng điểm câu hỏi. `NULL` ⇒ dùng mặc định 10 (xem `submission-file.rules.ts`).
+	 *
+	 * Vì sao cần cột riêng: `submissions.max_score` của bài không có câu hỏi được suy từ tổng điểm
+	 * câu hỏi nên bằng 0, và `updateFeedback` sẽ chặn mọi mức điểm giảng viên nhập.
+	 */
+	@Column({
+		type: 'numeric',
+		name: 'max_score',
+		precision: 6,
+		scale: 2,
+		nullable: true,
+		transformer: numericTransformer,
+	})
+	maxScore: number | null;
 
 	@Column({ type: 'timestamptz', name: 'available_from', nullable: true })
 	availableFrom: Date | null;

@@ -8,6 +8,7 @@ import { QuizQuestion } from './entities/quiz-question.entity';
 import { QuizOption } from './entities/quiz-option.entity';
 import { Submission } from './entities/submission.entity';
 import { SubmissionAnswer } from './entities/submission-answer.entity';
+import { SubmissionFile } from './entities/submission-file.entity';
 import { ExerciseController } from './exercise.controller';
 import { ExerciseService } from './exercise.service';
 
@@ -22,6 +23,7 @@ import { ExerciseService } from './exercise.service';
 			QuizOption,
 			Submission,
 			SubmissionAnswer,
+			SubmissionFile,
 		]),
 	],
 	controllers: [ExerciseController],

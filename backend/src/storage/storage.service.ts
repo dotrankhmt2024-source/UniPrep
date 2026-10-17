@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import type { ReadStream } from 'node:fs';
+import { mkdir, stat, unlink, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import type { MaterialType } from '../common/types';
 
@@ -52,6 +54,57 @@ export const UPLOAD_MIME_LABEL: Record<string, string> = {
 
 /** MIME hợp lệ, theo thứ tự khai báo ở `UPLOAD_MIME_MAP` (ổn định cho thông báo lỗi). */
 export const ALLOWED_UPLOAD_MIME_TYPES: string[] = Object.keys(UPLOAD_MIME_MAP);
+
+/**
+ * Bảng MIME → đuôi tệp cho **bài nộp của học viên** (yêu cầu 4.4 "bài tập nộp tệp").
+ *
+ * Vì sao tách khỏi `UPLOAD_MIME_MAP`: bảng kia gắn chặt MIME với `material_type` của **học liệu**
+ * (`slide`/`video`/`file`) — một khái niệm không tồn tại với bài nộp — nên dùng chung sẽ buộc tầng
+ * service phải "đoán" một material type vô nghĩa cho tệp bài làm.
+ *
+ * Danh sách rộng hơn học liệu ở nhóm văn bản/dữ liệu (`txt`, `csv`, `json`) vì bài tập nộp tệp
+ * thường là báo cáo hoặc tệp dữ liệu, không chỉ slide/video.
+ */
+export const SUBMISSION_MIME_MAP: Record<string, string> = {
+	'application/pdf': '.pdf',
+	'application/vnd.ms-powerpoint': '.ppt',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+		'.pptx',
+	'application/msword': '.doc',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+		'.docx',
+	'application/zip': '.zip',
+	'application/x-zip-compressed': '.zip',
+	'application/json': '.json',
+	'text/plain': '.txt',
+	'text/csv': '.csv',
+	'video/mp4': '.mp4',
+	'image/png': '.png',
+	'image/jpeg': '.jpg',
+};
+
+/** Nhãn tiếng Việt của từng định dạng bài nộp — dùng cho thông báo `415`. */
+export const SUBMISSION_MIME_LABEL: Record<string, string> = {
+	'application/pdf': 'PDF',
+	'application/vnd.ms-powerpoint': 'PowerPoint (.ppt)',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+		'PowerPoint (.pptx)',
+	'application/msword': 'Word (.doc)',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+		'Word (.docx)',
+	'application/zip': 'ZIP',
+	'application/x-zip-compressed': 'ZIP',
+	'application/json': 'JSON',
+	'text/plain': 'Văn bản (.txt)',
+	'text/csv': 'CSV',
+	'video/mp4': 'Video MP4',
+	'image/png': 'Ảnh PNG',
+	'image/jpeg': 'Ảnh JPEG',
+};
+
+/** MIME hợp lệ cho bài nộp, theo thứ tự khai báo (ổn định cho thông báo lỗi). */
+export const ALLOWED_SUBMISSION_MIME_TYPES: string[] =
+	Object.keys(SUBMISSION_MIME_MAP);
 
 /**
  * Mẫu tin nhắn tệp không hợp lệ — dùng chung với `LessonService` để hai nơi không lệch câu chữ.
@@ -171,10 +224,38 @@ export class StorageService {
 		}
 	}
 
-	/** Đuôi tệp lấy từ bảng MIME; chỉ khi MIME lạ mới dùng đuôi của tên gốc (và phải "trông" an toàn). */
+	/**
+	 * Đuôi tệp lấy từ bảng MIME; chỉ khi MIME lạ mới dùng đuôi của tên gốc (và phải "trông" an toàn).
+	 *
+	 * Tra **cả hai** bảng: học liệu (`UPLOAD_MIME_MAP`) và bài nộp (`SUBMISSION_MIME_MAP`). Hai bảng
+	 * không giao nhau về đuôi nên thứ tự tra không ảnh hưởng kết quả.
+	 */
+	/**
+	 * Mở luồng đọc một tệp theo `storageKey` — dùng cho endpoint tải tệp **có xác thực** của bài nộp.
+	 *
+	 * Kiểm an toàn đường dẫn **hai lần** (giống `remove`): khoá trong DB do server sinh, nhưng nếu
+	 * dữ liệu bị sửa tay thì tuyệt đối không được đọc một đường dẫn nằm ngoài `UPLOAD_DIR`.
+	 *
+	 * `stat` trước khi mở luồng để tệp thiếu trên đĩa ném lỗi **ngay tại đây** (caller đổi thành
+	 * `404`), thay vì lỗi `ENOENT` bất đồng bộ sau khi header của response đã được gửi đi.
+	 */
+	async openReadStream(storageKey: string): Promise<ReadStream> {
+		if (isAbsolute(storageKey) || !this.isSafeRelativeKey(storageKey)) {
+			this.logger.warn(`Từ chối đọc tệp với khoá không hợp lệ: ${storageKey}`);
+			throw new BadRequestException('Khoá tệp không hợp lệ.');
+		}
+
+		const target = join(this.uploadDir, storageKey);
+		await stat(target);
+		return createReadStream(target);
+	}
+
 	private resolveExtension(originalName: string, mimeType: string): string {
-		const mapped = UPLOAD_MIME_MAP[mimeType];
-		if (mapped) return mapped.ext;
+		const lessonMapped = UPLOAD_MIME_MAP[mimeType];
+		if (lessonMapped) return lessonMapped.ext;
+
+		const submissionMapped = SUBMISSION_MIME_MAP[mimeType];
+		if (submissionMapped) return submissionMapped;
 
 		const matched = SAFE_EXTENSION.exec(originalName);
 		return matched ? matched[0].toLowerCase() : '';

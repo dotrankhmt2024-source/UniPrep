@@ -2548,6 +2548,686 @@
 				"tags": ["Materials"]
 			}
 		},
+		"/api/quizzes": {
+			"get": {
+				"operationId": "ExerciseController_findQuizzes",
+				"parameters": [
+					{
+						"name": "page",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"default": 1,
+							"example": 1,
+							"type": "number"
+						}
+					},
+					{
+						"name": "take",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"maximum": 100,
+							"default": 20,
+							"example": 20,
+							"type": "number"
+						}
+					},
+					{
+						"name": "order",
+						"required": false,
+						"in": "query",
+						"description": "Thứ tự sắp xếp theo trường `sortBy`.",
+						"schema": {
+							"default": "desc",
+							"type": "string",
+							"enum": ["asc", "desc"]
+						}
+					},
+					{
+						"name": "search",
+						"required": false,
+						"in": "query",
+						"description": "Từ khoá tìm kiếm (tuỳ endpoint quyết định tìm trên trường nào).",
+						"schema": {
+							"maxLength": 100,
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			},
+			"post": {
+				"operationId": "ExerciseController_createQuiz",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateQuizDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/quizzes/{id}": {
+			"get": {
+				"operationId": "ExerciseController_getQuiz",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			},
+			"patch": {
+				"operationId": "ExerciseController_updateQuiz",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateQuizDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			},
+			"delete": {
+				"operationId": "ExerciseController_deleteQuiz",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/quizzes/{id}/publish": {
+			"patch": {
+				"operationId": "ExerciseController_publishQuiz",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/quizzes/{id}/questions": {
+			"get": {
+				"operationId": "ExerciseController_findQuestions",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			},
+			"post": {
+				"operationId": "ExerciseController_addQuestion",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateQuestionDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/questions/{id}": {
+			"patch": {
+				"operationId": "ExerciseController_updateQuestion",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateQuestionDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			},
+			"delete": {
+				"operationId": "ExerciseController_deleteQuestion",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/quizzes/{id}/attempts": {
+			"post": {
+				"operationId": "ExerciseController_startAttempt",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"201": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			},
+			"get": {
+				"operationId": "ExerciseController_findQuizAttempts",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "page",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"default": 1,
+							"example": 1,
+							"type": "number"
+						}
+					},
+					{
+						"name": "take",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"maximum": 100,
+							"default": 20,
+							"example": 20,
+							"type": "number"
+						}
+					},
+					{
+						"name": "order",
+						"required": false,
+						"in": "query",
+						"description": "Thứ tự sắp xếp theo trường `sortBy`.",
+						"schema": {
+							"default": "desc",
+							"type": "string",
+							"enum": ["asc", "desc"]
+						}
+					},
+					{
+						"name": "search",
+						"required": false,
+						"in": "query",
+						"description": "Từ khoá tìm kiếm (tuỳ endpoint quyết định tìm trên trường nào).",
+						"schema": {
+							"maxLength": 100,
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/attempts/{id}": {
+			"get": {
+				"operationId": "ExerciseController_getAttempt",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/submissions": {
+			"post": {
+				"description": "Chế độ `quiz`: bắt buộc có `answers`, chấm tự động ngay. Chế độ `file`/`mixed`: bắt buộc đã tải lên ít nhất một tệp qua `POST /api/submissions/:id/files`; bài chuyển sang \"chờ chấm\" và giảng viên chốt điểm qua `PATCH /api/submissions/:id/feedback`.",
+				"operationId": "ExerciseController_submit",
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SubmitQuizDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Nộp bài (trắc nghiệm và/hoặc tệp)",
+				"tags": ["Exercise"]
+			},
+			"get": {
+				"operationId": "ExerciseController_findSubmissions",
+				"parameters": [
+					{
+						"name": "page",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"default": 1,
+							"example": 1,
+							"type": "number"
+						}
+					},
+					{
+						"name": "take",
+						"required": false,
+						"in": "query",
+						"schema": {
+							"minimum": 1,
+							"maximum": 100,
+							"default": 20,
+							"example": 20,
+							"type": "number"
+						}
+					},
+					{
+						"name": "order",
+						"required": false,
+						"in": "query",
+						"description": "Thứ tự sắp xếp theo trường `sortBy`.",
+						"schema": {
+							"default": "desc",
+							"type": "string",
+							"enum": ["asc", "desc"]
+						}
+					},
+					{
+						"name": "search",
+						"required": false,
+						"in": "query",
+						"description": "Từ khoá tìm kiếm (tuỳ endpoint quyết định tìm trên trường nào).",
+						"schema": {
+							"maxLength": 100,
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/submissions/{id}/files": {
+			"post": {
+				"operationId": "ExerciseController_addSubmissionFile",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"required": ["file"],
+								"properties": {
+									"file": {
+										"type": "string",
+										"format": "binary"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Đính kèm tệp vào lượt làm đang mở",
+				"tags": ["Exercise"]
+			},
+			"get": {
+				"operationId": "ExerciseController_findSubmissionFiles",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Danh sách tệp của một bài nộp",
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/submission-files/{id}": {
+			"delete": {
+				"operationId": "ExerciseController_deleteSubmissionFile",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponseDto"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Xoá tệp bài nộp (chỉ khi lượt còn đang mở)",
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/submission-files/{id}/download": {
+			"get": {
+				"operationId": "ExerciseController_downloadSubmissionFile",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"summary": "Tải tệp bài nộp (kiểm tra quyền trước khi trả tệp)",
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/submissions/{id}": {
+			"get": {
+				"operationId": "ExerciseController_getSubmission",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/submissions/{id}/review": {
+			"get": {
+				"operationId": "ExerciseController_reviewSubmission",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
+		"/api/submissions/{id}/feedback": {
+			"patch": {
+				"operationId": "ExerciseController_updateFeedback",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/FeedbackDto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": ["Exercise"]
+			}
+		},
 		"/api/health": {
 			"get": {
 				"operationId": "HealthController_check",
@@ -3290,6 +3970,30 @@
 						"description": "Chuyển bài học sang chương khác **trong cùng khoá học**."
 					}
 				}
+			},
+			"CreateQuizDto": {
+				"type": "object",
+				"properties": {}
+			},
+			"UpdateQuizDto": {
+				"type": "object",
+				"properties": {}
+			},
+			"CreateQuestionDto": {
+				"type": "object",
+				"properties": {}
+			},
+			"UpdateQuestionDto": {
+				"type": "object",
+				"properties": {}
+			},
+			"SubmitQuizDto": {
+				"type": "object",
+				"properties": {}
+			},
+			"FeedbackDto": {
+				"type": "object",
+				"properties": {}
 			}
 		}
 	}

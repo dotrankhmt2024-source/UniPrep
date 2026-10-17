@@ -257,8 +257,13 @@ Module: `ExerciseModule` · Frontend: `pages/quiz/*`, `apis/quiz`
 | FR-4.10 | Hệ thống lưu số lần làm lại và thời gian làm từng lượt để phục vụ phát hiện bất thường | Bắt buộc |
 | FR-4.11 | Quiz có thể trộn thứ tự câu hỏi/đáp án | Tuỳ chọn |
 | FR-4.12 | Quiz có thể đặt điều kiện mở (theo thời gian) | Tuỳ chọn |
+| FR-4.13 | Bài tập/đánh giá chọn được **hình thức nộp**: trắc nghiệm, nộp tệp, hoặc cả hai (`submission_mode`) | Bắt buộc |
+| FR-4.14 | Học viên nộp tệp cho bài tập nộp tệp: tối đa 5 tệp/lượt, mỗi tệp ≤ `MAX_UPLOAD_SIZE_MB`, chỉ nhận định dạng trong whitelist; xem và xoá được tệp trước khi nộp | Bắt buộc |
+| FR-4.15 | **Chấm điểm tự động chỉ áp cho phần trắc nghiệm**; bài nộp tệp chuyển sang trạng thái "chờ chấm" để giảng viên cho điểm và phản hồi | Bắt buộc |
+| FR-4.16 | Học viên xem lại **kết quả và lịch sử làm bài** của chính mình: từng lượt, trạng thái, điểm, tệp đã nộp, phản hồi của giảng viên | Bắt buộc |
 
-Chi tiết bảng: `quizzes`, `quiz_questions`, `quiz_options`, `submissions`, `submission_answers`.
+Chi tiết bảng: `quizzes`, `quiz_questions`, `quiz_options`, `submissions`, `submission_answers`,
+`submission_files` (§3.3.11 của `02-specs/database-design.md`).
 
 ### FR-5. Diễn đàn thảo luận
 
@@ -434,6 +439,9 @@ chấp nhận kiểm chứng được (Given–When–Then) để dùng làm tes
 | AC-1.7 | **Given** tôi có hành vi học tập bất thường (ví dụ không đăng nhập nhiều ngày), **When** pipeline dự đoán chạy, **Then** tôi được gắn cờ rủi ro và nhận thông báo in-app kèm lý do dễ hiểu | FR-8.3, FR-8.5, FR-8.8 |
 | AC-1.8 | **Given** tôi đã nhận cảnh báo, **When** tôi mở thông báo, **Then** tôi thấy gợi ý các bài cần ôn | FR-8.17 |
 | AC-1.9 | **Given** tôi là học viên A, **When** tôi cố truy cập dữ liệu tiến độ của học viên B, **Then** hệ thống từ chối (403/404) | NFR-6 |
+| AC-1.10 | **Given** bài tập yêu cầu nộp tệp, **When** tôi nộp bài mà chưa đính kèm tệp nào, **Then** hệ thống từ chối (400) và tôi vẫn ở trong lượt làm | FR-4.13, FR-4.14 |
+| AC-1.11 | **Given** tôi đã nộp tệp cho bài tập nộp tệp, **When** tôi mở lại bài, **Then** tôi thấy bài ở trạng thái "chờ chấm" (không có điểm tự động) và xem lại được tệp đã nộp | FR-4.15, FR-4.16 |
+| AC-1.12 | **Given** giảng viên đã chấm bài nộp tệp của tôi, **When** tôi xem lịch sử làm bài, **Then** tôi thấy điểm, phản hồi và trạng thái của đúng lượt đó | FR-4.16 |
 
 ### US-2. Giảng viên (Instructor)
 
