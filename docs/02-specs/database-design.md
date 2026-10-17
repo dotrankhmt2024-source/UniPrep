@@ -549,6 +549,8 @@ khoá học (đề giữa kỳ/cuối kỳ). **Module:** `ExerciseModule`. **Tr�
 | `pass_score` | `numeric(5,2)` | NULL | | |
 | `shuffle_questions` | `boolean` | NOT NULL | `false` | |
 | `show_answers_after` | `varchar(20)` | NOT NULL | `'after_submit'` | `CHECK (show_answers_after IN ('never','after_submit','after_due'))` |
+| `submission_mode` | `varchar(20)` | NOT NULL | `'quiz'` | **Thêm ở E5 (yêu cầu 4.4)** — `CHECK (submission_mode IN ('quiz','file','mixed'))`. `quiz` = chỉ trắc nghiệm; `file` = chỉ nộp tệp; `mixed` = cả hai. Giá trị mặc định `'quiz'` giữ nguyên nghĩa cho mọi dữ liệu có trước migration nên không cần backfill |
+| `max_score` | `numeric(6,2)` | NULL | | **Thêm ở E5** — điểm tối đa của **phần nộp tệp**; `CHECK (max_score IS NULL OR max_score > 0)`. `NULL` ⇒ dùng mặc định 10. Chỉ dùng cho `file`/`mixed`; chế độ `quiz` để `NULL` vì điểm tối đa suy từ tổng điểm câu hỏi |
 | `available_from` | `timestamptz` | NULL | | |
 | `due_at` | `timestamptz` | NULL | | |
 | `is_published` | `boolean` | NOT NULL | `false` | |
@@ -710,6 +712,34 @@ cho model. **Module:** `CourseModule`/`LessonModule`. **Trạng thái:** cần l
 | `resolution_note` | `text` | NULL | | |
 
 **Chỉ mục:** `idx_content_reports_status_time (status, created_at DESC)`; `idx_content_reports_target (target_type, target_id)`; `uq_content_reports_open` UNIQUE `(reporter_id, target_type, target_id) WHERE status IN ('pending','reviewing')` — chặn một người báo cáo trùng cùng một đối tượng.
+
+#### 3.3.11 `submission_files` (bổ sung ở E5, 2026-10-16)
+
+**Mục đích:** tệp học viên đính kèm cho một lượt làm bài — cơ sở của "bài tập nộp tệp" (yêu cầu 4.4
+"bài trắc nghiệm và/hoặc bài tập nộp tệp"). **Vì sao là bảng riêng thay vì cột `file_url` trên
+`submissions`:** một bài nộp thực tế gồm nhiều tệp (báo cáo + slide + mã nguồn); cột đơn sẽ phải đổi
+schema ngay lần thứ hai.
+**Module:** `ExerciseModule`. **Trạng thái:** ✅ E5 (upload multipart + danh sách + xoá + tải xuống có xác thực).
+
+| Cột | Kiểu Postgres | Null | Mặc định | Ràng buộc/Ghi chú |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | NOT NULL | `gen_random_uuid()` | PK |
+| `created_at` | `timestamptz` | NOT NULL | `now()` | |
+| `updated_at` | `timestamptz` | NOT NULL | `now()` | |
+| `submission_id` | `uuid` | NOT NULL | | FK → `submissions(id)` **ON DELETE CASCADE** |
+| `uploaded_by` | `uuid` | NULL | | FK → `users(id)` **ON DELETE SET NULL**; tách khỏi `submissions.user_id` để sau này giảng viên đính kèm tệp nhận xét mà vẫn truy vết được |
+| `original_name` | `varchar(255)` | NOT NULL | | Tên gốc **để hiển thị**; đã giải mã latin1→utf8 (`upload-file-name.ts`). Không bao giờ dùng làm đường dẫn trên đĩa |
+| `storage_key` | `varchar(512)` | NOT NULL | | Khoá do server sinh (`submissions/<submissionId>/<uuid><ext>`); **không** trả ra API |
+| `mime_type` | `varchar(100)` | NOT NULL | | Phải nằm trong whitelist của `SUBMISSION_MIME_MAP` |
+| `file_size_bytes` | `bigint` | NOT NULL | | `CHECK (file_size_bytes >= 0)` |
+
+**Chỉ mục:** UNIQUE `uq_submission_files_storage_key (storage_key)`; `idx_submission_files_submission (submission_id)`.
+
+**Ràng buộc không biểu diễn được bằng FK (§4.5):**
+- Tối đa **5 tệp** cho một lượt nộp (`MAX_SUBMISSION_FILES`) — đếm trong transaction có khoá hàng
+  `submissions` để hai request upload song song không cùng vượt trần.
+- Chỉ được thêm/xoá tệp khi `submissions.status = 'in_progress'`.
+- Tệp chỉ tồn tại với `quizzes.submission_mode IN ('file','mixed')`.
 
 ### 3.4. Cụm D — Analytics & AI
 
@@ -1075,6 +1105,7 @@ architecture.md §8. Chỉ ghi thêm, không sửa.
 | C | `quiz_options` | `ExerciseModule` | Entity + migration ✅ (E0-T5) |
 | C | `submissions` | `ExerciseModule` | Entity + migration ✅ (E0-T5); API ở E5-T2 |
 | C | `submission_answers` | `ExerciseModule` | Entity + migration ✅ (E0-T5) |
+| C | `submission_files` | `ExerciseModule` | **Đã có (E5, 2026-10-16)** — migration `1792164517382-AddSubmissionFilesAndQuizMode` (cùng `quizzes.submission_mode`, `quizzes.max_score`); API tệp bài nộp ✅ |
 | C | `discussion_threads` | `CourseModule`, `LessonModule` | Entity + migration ✅ (E0-T5); API ở E6-T1 |
 | C | `discussion_posts` | `CourseModule`, `LessonModule` | Entity + migration ✅ (E0-T5) |
 | C | `content_reports` | `AdminModule` | Entity + migration ✅ (E0-T5); API ở E6-T2 |
@@ -1111,6 +1142,7 @@ architecture.md §8. Chỉ ghi thêm, không sửa.
 | `quiz_questions` | UNIQUE `(quiz_id, order_index)` | Thứ tự câu hỏi ổn định |
 | `submissions` | UNIQUE `(quiz_id, user_id, attempt_no)` | `attempt_no` chỉ có nghĩa khi không trùng |
 | `submission_answers` | UNIQUE `(submission_id, question_id)` | Một câu trả lời cho mỗi câu hỏi |
+| `submission_files` | UNIQUE `(storage_key)` | Khoá lưu trữ do server sinh (`uuid`), trùng nghĩa là hai hàng cùng trỏ một tệp — luôn là lỗi |
 | `content_reports` | UNIQUE `(reporter_id, target_type, target_id) WHERE status IN ('pending','reviewing')` | Chặn spam báo cáo trùng |
 | `risk_predictions` | UNIQUE `(user_id, COALESCE(course_id,…), model_version_id) WHERE is_current` | Chỉ một dự đoán hiện hành → dashboard không đọc nhầm bản cũ |
 | `risk_feature_contributions` | UNIQUE `(risk_prediction_id, feature_key)` | Mỗi feature chỉ một dòng cho mỗi dự đoán |
@@ -1126,6 +1158,8 @@ architecture.md §8. Chỉ ghi thêm, không sửa.
 | `*` → `courses(id)` (nội dung: section, lesson, quiz, thread) | `CASCADE` | Nội dung không tồn tại độc lập với khoá học |
 | `risk_predictions` → `model_versions(id)` | `RESTRICT` | Không cho xoá model đã từng sinh dự đoán — phá vỡ khả năng giải trình |
 | `learning_events` → `lessons/quizzes/enrollments` | `SET NULL` | Sự kiện là log bất biến, không được mất chỉ vì nội dung bị xoá |
+| `submission_files` → `submissions(id)` | `CASCADE` | Tệp là dữ liệu con của bài nộp, cùng quy tắc với `submission_answers`. **Lưu ý:** cascade chỉ xoá hàng trong DB, **không** xoá tệp trên đĩa — tệp mồ côi phải dọn bằng script (xem §11) |
+| `submission_files` → `users(id)` | `SET NULL` | Dữ liệu tham chiếu: giữ tệp kể cả khi người tải lên bị xoá |
 | `discussion_posts` → `discussion_threads(id)` | `CASCADE` | Bài viết thuộc chủ đề |
 | `discussion_posts` → `discussion_posts(id)` | `CASCADE` | Xoá bài cha kéo theo trả lời (theo dõi soft delete ở §11) |
 
@@ -1165,13 +1199,19 @@ kèm cột khác (ví dụ index đơn trên `status` là vô nghĩa trên bản
 
 ### 4.5. Ràng buộc không thể biểu diễn bằng FK
 
-Ba chỗ dưới đây **cố ý** không có khoá ngoại, toàn vẹn phải do tầng service đảm bảo; đây là đánh đổi đã
+Bốn chỗ dưới đây **cố ý** không có khoá ngoại, toàn vẹn phải do tầng service đảm bảo; đây là đánh đổi đã
 biết, không phải sơ suất:
 
 1. `content_reports.target_id` — tham chiếu đa hình tới 5 bảng khác nhau.
 2. `notifications.related_id` — tham chiếu đa hình.
 3. `submission_answers.selected_option_ids` (`uuid[]`) và `interventions.recommended_lesson_ids` (`uuid[]`)
    — Postgres không hỗ trợ FK cho phần tử mảng. Cách kiểm tra: validate ở DTO/service trước khi ghi.
+4. **Các luật của bài nộp tệp** (E5, `submission-file.rules.ts`) — không diễn đạt được bằng CHECK vì phụ
+   thuộc **hai bảng**: trần 5 tệp/lượt (`MAX_SUBMISSION_FILES`), chỉ được ghi tệp khi lượt `in_progress`,
+   và tệp chỉ hợp lệ với `quizzes.submission_mode IN ('file','mixed')`. Nơi thực thi duy nhất:
+   `ExerciseService.addSubmissionFile` — đếm và ghi trong **cùng** một transaction có
+   `SELECT … FOR UPDATE` trên hàng `submissions`, nếu không hai request upload song song có thể cùng
+   vượt trần.
 
 Nếu nhóm muốn toàn vẹn tuyệt đối ở tầng DB, phương án là tách bảng nối (`submission_answer_options`,
 `intervention_lessons`) — xem §11.
@@ -1422,7 +1462,7 @@ Danh sách này là **danh mục tối thiểu**; thêm loại mới chỉ cần
 | `medium` | Trung bình | Vàng (cảnh báo) |
 | `high` | Cao | Đỏ (nguy hiểm) |
 
-### 7.6. `SubmissionStatus`, `QuestionType`, `MaterialType`
+### 7.6. `SubmissionStatus`, `SubmissionMode`, `QuestionType`, `MaterialType`
 
 | Union type | Giá trị | Nhãn tiếng Việt |
 | --- | --- | --- |
@@ -1430,6 +1470,9 @@ Danh sách này là **danh mục tối thiểu**; thêm loại mới chỉ cần
 | | `submitted` | Đã nộp, chờ chấm |
 | | `graded` | Đã chấm |
 | | `expired` | Hết giờ |
+| `SubmissionMode` (E5) | `quiz` | Trắc nghiệm |
+| | `file` | Nộp tệp |
+| | `mixed` | Trắc nghiệm + nộp tệp |
 | `QuestionType` | `single_choice` | Một đáp án |
 | | `multiple_choice` | Nhiều đáp án |
 | | `true_false` | Đúng / Sai |
@@ -2148,6 +2191,7 @@ tả cho rõ nghĩa** (không sửa nội dung tự sinh ngoài việc bổ sung
 | 10 | **Đã có (E1-T4):** `1791017471553-AddPasswordResetTokens.ts` — migration **đầu tiên sau baseline**, tạo `password_reset_tokens` (sinh bằng CLI) + block viết tay cho index `(user_id, expires_at DESC)` vì TypeORM không biểu diễn được thứ tự cột trong `@Index` |
 | 11 | **E2 không sinh migration nào (2026-10-03):** E2-T1 (`GET|PATCH /api/users/me`) và E2-T2 (`GET /api/users`, `PATCH /api/users/:id/role`) chỉ đọc/ghi trên các cột `users` đã có từ baseline. Bằng chứng: `npm run schema:log` vẫn rỗng sau khi làm xong. `cohorts` của E2-T3 **đã chuyển sang E3** (cần FK tới `courses`) nên sẽ là migration riêng ở đó |
 | 12 | **Đã có (E3-T1):** `1791022171040-CreateCohortsInstructorsPrerequisites.ts` — tạo `cohorts`, `course_instructors`, `course_prerequisites` (sinh bằng CLI) + block viết tay cho 2 index: `uq_cohorts_course_class` (partial unique) và `uq_course_instructors_course_user_cohort` (unique trên biểu thức `COALESCE`). Cùng file này thêm FK `enrollments.cohort_id → cohorts(id) ON DELETE SET NULL` (gỡ TODO trong `enrollment.entity.ts`) |
+| 13 | **Đã có (E5, 2026-10-16):** `1792164517382-AddSubmissionFilesAndQuizMode.ts` — tạo `submission_files` + thêm `quizzes.submission_mode` và `quizzes.max_score` (sinh bằng CLI, **không** có block viết tay vì cả hai index của bảng mới đều biểu diễn được bằng `@Index`). Đã kiểm chứng `up → revert → up` và `schema:log` rỗng |
 
 > **Vì sao gộp thay vì tách 5 file theo cụm:** cả 25 entity được viết trong cùng một task (E0-T5) và
 > schema chưa từng tồn tại trên môi trường nào khác, nên một baseline duy nhất dễ review và dễ revert

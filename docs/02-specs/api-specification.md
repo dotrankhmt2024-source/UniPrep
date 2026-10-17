@@ -2090,6 +2090,10 @@ Tiến độ tổng hợp theo khoá học (bản rút gọn của `GET /api/enr
 > tạo và tự chấm `single_choice`, `multiple_choice`, `true_false`; `short_answer`/`essay` chưa được hỗ
 > trợ trong luồng làm bài tự động. Frontend lưu đáp án đang chọn cục bộ theo attempt, không ghi nháp
 > lên server.
+>
+> **Bổ sung E5 (2026-10-16) — bài tập nộp tệp (yêu cầu 4.4):** thêm `quizzes.submission_mode`
+> (`quiz`\|`file`\|`mixed`) và 4 route tệp bài nộp; migration `1792164517382-AddSubmissionFilesAndQuizMode`.
+> `short_answer`/`essay` **vẫn** chưa hỗ trợ — bài nộp tệp là kênh khác, không thay thế tự luận chữ.
 
 #### `GET /api/quizzes`
 Danh sách quiz (lọc theo khoá học/bài học/trạng thái).
@@ -2144,6 +2148,8 @@ Tạo quiz mới.
   "lessonId": null,
   "title": "Kiểm tra giữa kỳ — Chương 1-2",
   "description": "20 câu trắc nghiệm, thời gian 30 phút.",
+  "submissionMode": "mixed",
+  "maxScore": 5,
   "timeLimitMinutes": 30,
   "maxAttempts": 2,
   "passScore": 5,
@@ -2157,15 +2163,17 @@ Tạo quiz mới.
 |---|---|---|
 | `courseId` | ✔ | UUID khoá học mình phụ trách |
 | `title` | ✔ | 3–200 ký tự |
+| `submissionMode` | ✖ | `quiz` \| `file` \| `mixed`, mặc định `quiz`. **Thêm ở E5** (yêu cầu 4.4) |
+| `maxScore` | ✖ | **> 0** và ≤ `1000`, tối đa 2 chữ số thập phân; bỏ trống ⇒ `10`. Chỉ có nghĩa với `file`/`mixed` (chế độ `quiz` bị ép `NULL` vì điểm tối đa suy từ tổng điểm câu hỏi). Cận dưới là `> 0` để khớp CHECK `chk_quizzes_max_score` — nhận `0` ở DTO sẽ biến lỗi nhập liệu thành `500` |
 | `timeLimitMinutes` | ✖ | `1`–`300`; `null` = không giới hạn thời gian |
 | `maxAttempts` | ✖ | `1`–`10`, mặc định `1` |
 | `passScore` | ✖ | `0`–`10` |
 | `shuffleQuestions` | ✖ | boolean, mặc định `false` |
-| `openAt` / `closeAt` | ✖ | ISO 8601; `closeAt > openAt` |
+| `openAt` / `closeAt` | ✖ | ISO 8601; `closeAt > openAt`. `closeAt` quá khứ ⇒ `status = 'closed'` sau khi công bố (bài nộp tệp vẫn nhận bài muộn) |
 
 **201 Created** — trả object quiz; `status` mặc định `'draft'`.
 
-**Lỗi thường gặp:** `400` (`closeAt` ≤ `openAt`), `404`, `403`.
+**Lỗi thường gặp:** `400` (`closeAt` ≤ `openAt`, `maxScore` ≤ 0), `404`, `403`.
 
 #### `GET /api/quizzes/:id`
 Chi tiết quiz. Với học viên, **không trả `isCorrect`** của đáp án trước khi nộp.
@@ -2392,7 +2400,12 @@ Danh sách lượt làm của một quiz.
 **Lỗi thường gặp:** `404`, `403`.
 
 #### `POST /api/submissions`
-Nộp bài: gửi toàn bộ đáp án của một lượt làm; hệ thống **chấm tự động** và trả kết quả ngay.
+Nộp bài. Hành vi phụ thuộc `quizzes.submission_mode`:
+
+- `quiz` — gửi đáp án; hệ thống **chấm tự động** và trả điểm ngay (`status = "graded"`).
+- `file` / `mixed` — phải đã tải lên ít nhất một tệp qua `POST /api/submissions/:id/files`; bài chuyển
+  `status = "submitted"` (chờ giảng viên chấm). Với `mixed`, phần trắc nghiệm (nếu có câu hỏi) được
+  chấm tự động và lưu làm **điểm tạm** (`awaitingManualGrading = true`).
 
 - **Quyền:** `student` (own)
 
@@ -2406,20 +2419,100 @@ Nộp bài: gửi toàn bộ đáp án của một lượt làm; hệ thống **
 | Field | Bắt buộc | Ràng buộc |
 |---|---|---|
 | `attemptId` | ✔ | UUID lượt làm `in_progress` thuộc chính người gọi |
-| `answers` | ✔ | Mảng ≥ 1; mỗi phần tử có `questionId` (thuộc quiz) và `selectedOptionIds` (câu `single_choice`/`true_false` gửi **đúng 1** phần tử; `multiple_choice` gửi ≥ 1) |
+| `answers` | Tuỳ `submission_mode` | **Bắt buộc ≥ 1 khi `submission_mode = 'quiz'`** (backend trả `400` nếu thiếu). Với `file` bỏ trống; với `mixed` là tuỳ chọn (câu không trả lời tính là sai). Mỗi phần tử có `questionId` (thuộc quiz) và `selectedOptionIds` (câu `single_choice`/`true_false` gửi **đúng 1** phần tử; `multiple_choice` gửi ≥ 1) |
 | `answers[].textAnswer` | ✖ | Dự trữ cho câu tự luận — **chưa nằm trong phạm vi v1** (đề xuất) |
+
+**201 Created** (chế độ `quiz`)
+
+```json
+{
+  "error": false,
+  "data": {"id":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","attemptId":"92a3b4c5-d6e7-4f80-9a92-a3b4c5d6e7f8","quizId":"5e6f7081-92a3-4b4c-8d5e-6f708192a3b4","userId":"8f2a1b3c-4d5e-4f60-8a91-b2c3d4e5f601","submissionMode":"quiz","status":"graded","score":8.5,"maxScore":10,"correctCount":17,"totalQuestions":20,"passed":true,"autoGraded":true,"awaitingManualGrading":false,"isLate":false,"fileCount":0,"submittedAt":"2026-09-25T09:24:11Z","gradedAt":"2026-09-25T09:24:11Z","attemptNo":1,"durationSeconds":420,"createdAt":"2026-09-25T09:24:11Z","updatedAt":"2026-09-25T09:24:11Z"},
+  "message": "Nộp bài thành công. Điểm của bạn: 8.5/10"
+}
+```
+
+**201 Created** (chế độ `file` — chờ chấm, `score = null`)
+
+```json
+{
+  "error": false,
+  "data": {"id":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","attemptId":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","quizId":"5e6f7081-92a3-4b4c-8d5e-6f708192a3b4","submissionMode":"file","status":"submitted","score":null,"maxScore":20,"correctCount":null,"totalQuestions":0,"passed":null,"autoGraded":false,"awaitingManualGrading":true,"isLate":true,"fileCount":2,"submittedAt":"2026-10-16T09:24:11Z","gradedAt":null,"attemptNo":1,"durationSeconds":3600}
+}
+```
+
+**Lỗi thường gặp:** `400` (thiếu `attemptId`, đáp án không thuộc quiz, `"Vui lòng trả lời ít nhất một câu hỏi."`, `"Vui lòng đính kèm ít nhất một tệp trước khi nộp bài."`), `404`, `403` `"Đây không phải lượt làm bài của bạn."`, `409` `"Lượt làm bài này đã được nộp."` hoặc `"Lượt làm bài đã hết hạn."`.
+
+> **Hạn nộp theo chế độ:** `quiz` đóng cứng theo `due_at` (`409 "Bài kiểm tra đã đóng."`); `file`/`mixed`
+> **vẫn nhận bài sau hạn** và ghi `isLate = true` — nếu không, học viên nộp báo cáo muộn mất luôn cơ hội
+> nộp và giảng viên không thấy được ai nộp muộn. Hết `timeLimitSeconds` thì mọi chế độ đều bị khoá (`409`).
+
+#### `POST /api/submissions/:id/files`
+Đính kèm một tệp vào lượt làm đang mở (yêu cầu 4.4 — "bài tập nộp tệp").
+
+- **Quyền:** `student` — **chỉ chủ sở hữu lượt làm**
+- **Body:** `multipart/form-data`, một trường tệp tên `file`
+- **Ràng buộc:** `quizzes.submission_mode IN ('file','mixed')`; lượt phải `in_progress`; tối đa **5 tệp**
+  (`MAX_SUBMISSION_FILES`); mỗi tệp ≤ `MAX_UPLOAD_SIZE_MB`; MIME phải nằm trong whitelist bài nộp
+  (PDF, PPT/PPTX, DOC/DOCX, ZIP, JSON, TXT, CSV, MP4, PNG, JPEG)
 
 **201 Created**
 
 ```json
 {
   "error": false,
-  "data": {"id":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","attemptId":"92a3b4c5-d6e7-4f80-9a92-a3b4c5d6e7f8","quizId":"5e6f7081-92a3-4b4c-8d5e-6f708192a3b4","userId":"8f2a1b3c-4d5e-4f60-8a91-b2c3d4e5f601","status":"graded","score":8.5,"maxScore":10,"correctCount":17,"totalQuestions":20,"passed":true,"autoGraded":true,"submittedAt":"2026-09-25T09:24:11Z","gradedAt":"2026-09-25T09:24:11Z","attemptNo":1,"createdAt":"2026-09-25T09:24:11Z","updatedAt":"2026-09-25T09:24:11Z"},
-  "message": "Nộp bài thành công. Điểm của bạn: 8.5/10"
+  "data": {"id":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","submissionId":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","originalName":"Báo cáo đồ án.pdf","mimeType":"application/pdf","fileSizeBytes":2456789,"uploadedBy":"8f2a1b3c-4d5e-4f60-8a91-b2c3d4e5f601","downloadUrl":"/api/submission-files/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/download","createdAt":"2026-10-16T09:20:00Z"},
+  "message": "Thành công"
 }
 ```
 
-**Lỗi thường gặp:** `400` (thiếu `attemptId`, đáp án không thuộc quiz), `404`, `403` `"Đây không phải lượt làm bài của bạn."`, `409` `"Lượt làm bài này đã được nộp."` hoặc `"Lượt làm bài đã hết hạn."`.
+**Lỗi thường gặp:** `400` (thiếu tệp, quá 5 tệp, bài chỉ nhận trắc nghiệm), `403` (không phải chủ lượt),
+`409` (lượt đã nộp/hết hạn), `413` (quá dung lượng), `415` (định dạng ngoài whitelist).
+
+> `storageKey` **không** bao giờ được trả ra API: đường dẫn nội bộ trên đĩa không phải thông tin cho
+> client, và giữ kín nó là lớp phòng thủ thứ hai ngoài kiểm tra quyền.
+
+#### `GET /api/submissions/:id/files`
+Danh sách tệp của một bài nộp.
+
+- **Quyền:** `student` (own), `teacher` (assigned), `admin`
+
+**200 OK**
+
+```json
+{
+  "error": false,
+  "data": {"submissionId":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","submissionMode":"file","allowUpload":false,"maxFiles":5,"items":[{"id":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","originalName":"Báo cáo đồ án.pdf","mimeType":"application/pdf","fileSizeBytes":2456789,"downloadUrl":"/api/submission-files/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/download","createdAt":"2026-10-16T09:20:00Z"}]},
+  "message": "Thành công"
+}
+```
+
+> `allowUpload` do **server** quyết định (chủ lượt + `in_progress` + chế độ cần tệp) để luật "ai được
+> ghi tệp" chỉ có một nơi định nghĩa; FE không tự suy ra từ trạng thái.
+
+#### `DELETE /api/submission-files/:id`
+Xoá một tệp bài nộp.
+
+- **Quyền:** `student` (own), `teacher` (assigned), `admin` — nhưng **chỉ khi lượt còn `in_progress`**
+
+**Lỗi thường gặp:** `404`, `409` `"Không thể xoá tệp sau khi bài đã được nộp."`
+
+> Giảng viên cũng không xoá được tệp đã nộp: bài nộp là bằng chứng đánh giá, sửa nó sau khi nộp sẽ làm
+> lệch điểm và lịch sử. Giảng viên muốn loại tệp thì dùng phản hồi/yêu cầu nộp lại.
+
+#### `GET /api/submission-files/:id/download`
+Tải tệp bài nộp. Trả **luồng nhị phân** (`application/octet-stream`-style), không đi qua envelope
+`{error, data, message}`.
+
+- **Quyền:** `student` (own), `teacher` (assigned), `admin`
+- **Header trả về:** `Content-Disposition: attachment; filename="…"; filename*=UTF-8''…` (RFC 5987 để tên
+  tiếng Việt không mất dấu) và `X-Content-Type-Options: nosniff`
+
+**Lỗi thường gặp:** `403`, `404` (không có hàng DB, hoặc tệp không còn trên đĩa).
+
+> **Vì sao không phục vụ tĩnh như học liệu:** `/uploads/**` là `useStaticAssets`, **không** đi qua guard
+> nào — ai có URL là tải được. Với bài làm cá nhân của học viên thì đó là rò rỉ dữ liệu, nên tệp bài nộp
+> đi qua endpoint có xác thực và dùng đúng `assertCanViewSubmission` như `GET /api/submissions/:id`.
 
 #### `GET /api/submissions`
 Danh sách bài nộp.
@@ -2505,7 +2598,14 @@ Giảng viên cho điểm thủ công và/hoặc gửi phản hồi cho bài n�
 
 **200 OK** — `{ "error": false, "data": { "id": "...", "score": 9, "status": "graded", "teacherFeedback": "Trình bày tốt, chú ý câu 12 và 18.", "feedbackAt": "2026-09-26T02:00:00.000Z", "updatedAt": "..." }, "message": "Đã gửi phản hồi" }`
 
-**Lỗi thường gặp:** `400` (`score` ngoài `0..maxScore`), `404`, `403`. Việc sửa điểm ghi `audit_logs` (đề xuất).
+**Lỗi thường gặp:** `400` (`score` ngoài `0..maxScore`, hoặc **chốt bài mà không nhập điểm** khi bài chưa
+có điểm tự động — câu `"Vui lòng nhập điểm trước khi chốt bài nộp."`), `404`, `403`. Việc sửa điểm ghi
+`audit_logs` (đề xuất).
+
+> **Đây là bước "chấm tay" của bài nộp tệp (yêu cầu 4.4):** với `submission_mode = 'file'`, lượt làm đi
+> từ `submitted` → `graded` **chỉ** qua endpoint này. Chặn trường hợp chốt bài mà bỏ trống điểm là chủ
+> đích: nếu không, hệ thống sẽ có bài `graded` với `score = NULL`, analytics đọc thành 0 và học viên
+> thấy "đã chấm" mà không có điểm.
 
 ### LearningActivityModule — telemetry hành vi (`/api/learning-events`)
 
@@ -4224,6 +4324,11 @@ Quy ước đặt tên: hàm `getX` / `getXById` / `createX` / `updateX` / `dele
 | `GET /api/submissions/:id` | `getSubmissionById` | `apis/submission/index.ts` | `Submission` |
 | `GET /api/submissions/:id/review` | `getSubmissionReview` | `apis/submission/index.ts` | `SubmissionReview` |
 | `PATCH /api/submissions/:id/feedback` | `giveFeedback` | `apis/submission/index.ts` | `GiveFeedbackPayload` |
+| `POST /api/submissions/:id/files` | `uploadSubmissionFile` | `apis/assessment/index.ts` ✅ | `SubmissionFile` (multipart, trường `file`) |
+| `GET /api/submissions/:id/files` | `getSubmissionFiles` | `apis/assessment/index.ts` ✅ | `SubmissionFilesResponse` (kèm `allowUpload`, `maxFiles`) |
+| `DELETE /api/submission-files/:id` | `deleteSubmissionFile` | `apis/assessment/index.ts` ✅ | `SuccessResponse` |
+| `GET /api/submission-files/:id/download` | `downloadSubmissionFile` | `apis/assessment/index.ts` ✅ | `Blob` — **phải** tải qua axios (endpoint cần token), không dùng `<a href>` |
+| `GET /api/submissions?quizId=…` (lịch sử làm bài) | `getQuizSubmissions` | `apis/assessment/index.ts` ✅ | `AssessmentSubmissionListResponse` |
 | `POST /api/learning-events` | `sendLearningEvents` | `apis/learning-event/index.ts` | `types/learning-event.ts` → `LearningEventBatchPayload` |
 | `GET /api/learning-events` | `getLearningEvents` | `apis/learning-event/index.ts` | `LearningEvent` |
 | `GET /api/discussion-threads` | `getThreads` | `apis/discussion/index.ts` | `types/discussion.ts` → `Thread` |
