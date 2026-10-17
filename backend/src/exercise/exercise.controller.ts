@@ -7,9 +7,27 @@ import {
 	Patch,
 	Post,
 	Query,
+	Res,
+	UploadedFile,
+	UseInterceptors,
 } from '@nestjs/common';
+import {
+	ApiBearerAuth,
+	ApiBody,
+	ApiConsumes,
+	ApiCreatedResponse,
+	ApiOkResponse,
+	ApiOperation,
+	ApiProduces,
+	ApiTags,
+} from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { ApiResponseDto } from '../common/dto/api-response.dto';
+import { UUID_V4_PIPE } from '../common/pipes/uuid-param.pipe';
+import { buildContentDisposition } from './submission-file.rules';
 import type { AuthUser } from '../auth/types/authenticated-user.type';
 import {
 	CreateQuestionDto,
@@ -21,8 +39,9 @@ import {
 	UpdateQuestionDto,
 	UpdateQuizDto,
 } from './dto/assessment.dto';
-import { ExerciseService } from './exercise.service';
+import { ExerciseService, type SubmissionUploadFile } from './exercise.service';
 
+@ApiTags('Exercise')
 @Controller()
 export class ExerciseController {
 	constructor(private readonly exerciseService: ExerciseService) {}
@@ -122,8 +141,100 @@ export class ExerciseController {
 
 	@Post('submissions')
 	@Roles('student')
+	@ApiBearerAuth()
+	@ApiOperation({
+		summary: 'Nộp bài (trắc nghiệm và/hoặc tệp)',
+		description:
+			'Chế độ `quiz`: bắt buộc có `answers`, chấm tự động ngay. Chế độ `file`/`mixed`: bắt buộc đã tải lên ít nhất một tệp qua `POST /api/submissions/:id/files`; bài chuyển sang "chờ chấm" và giảng viên chốt điểm qua `PATCH /api/submissions/:id/feedback`.',
+	})
+	@ApiCreatedResponse({ type: ApiResponseDto })
 	submit(@CurrentUser() actor: AuthUser, @Body() dto: SubmitQuizDto) {
 		return this.exerciseService.submit(actor, dto);
+	}
+
+	/**
+	 * Tải tệp cho một lượt làm đang mở (yêu cầu 4.4 — "bài tập nộp tệp").
+	 *
+	 * `FileInterceptor('file')` **không** truyền `storage` ⇒ multer giữ tệp trong bộ nhớ, để MIME và
+	 * dung lượng được kiểm **trước** khi chạm đĩa (cùng lý do đã ghi ở `MaterialsController`).
+	 * Đánh đổi: trần `MAX_UPLOAD_SIZE_MB` là hàng rào chống tự DoS — không được bỏ.
+	 */
+	@Post('submissions/:id/files')
+	@Roles('student')
+	@UseInterceptors(FileInterceptor('file'))
+	@ApiBearerAuth()
+	@ApiConsumes('multipart/form-data')
+	@ApiBody({
+		schema: {
+			type: 'object',
+			required: ['file'],
+			properties: { file: { type: 'string', format: 'binary' } },
+		},
+	})
+	@ApiOperation({ summary: 'Đính kèm tệp vào lượt làm đang mở' })
+	@ApiCreatedResponse({ type: ApiResponseDto })
+	addSubmissionFile(
+		@Param('id', UUID_V4_PIPE) id: string,
+		@UploadedFile() file: SubmissionUploadFile | undefined,
+		@CurrentUser() actor: AuthUser,
+	) {
+		return this.exerciseService.addSubmissionFile(id, file, actor);
+	}
+
+	@Get('submissions/:id/files')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Danh sách tệp của một bài nộp' })
+	@ApiOkResponse({ type: ApiResponseDto })
+	findSubmissionFiles(
+		@Param('id', UUID_V4_PIPE) id: string,
+		@CurrentUser() actor: AuthUser,
+	) {
+		return this.exerciseService.findSubmissionFiles(id, actor);
+	}
+
+	@Delete('submission-files/:id')
+	@Roles('student', 'teacher', 'admin')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Xoá tệp bài nộp (chỉ khi lượt còn đang mở)' })
+	@ApiOkResponse({ type: ApiResponseDto })
+	deleteSubmissionFile(
+		@Param('id', UUID_V4_PIPE) id: string,
+		@CurrentUser() actor: AuthUser,
+	) {
+		return this.exerciseService.deleteSubmissionFile(id, actor);
+	}
+
+	/**
+	 * Tải tệp bài nộp — **có xác thực**, khác học liệu (`/uploads/**` là tĩnh, không qua guard).
+	 *
+	 * Dùng `@Res()` nên response **không** đi qua envelope `{error, data, message}` của
+	 * `TransformResponseInterceptor`: đây là luồng nhị phân, không phải payload JSON.
+	 */
+	@Get('submission-files/:id/download')
+	@ApiBearerAuth()
+	@ApiProduces('application/octet-stream')
+	@ApiOperation({
+		summary: 'Tải tệp bài nộp (kiểm tra quyền trước khi trả tệp)',
+	})
+	async downloadSubmissionFile(
+		@Param('id', UUID_V4_PIPE) id: string,
+		@CurrentUser() actor: AuthUser,
+		@Res() response: Response,
+	): Promise<void> {
+		const { stream, file } = await this.exerciseService.openSubmissionFile(
+			id,
+			actor,
+		);
+		response.setHeader('Content-Type', file.mimeType);
+		response.setHeader('Content-Length', file.fileSizeBytes);
+		response.setHeader(
+			'Content-Disposition',
+			buildContentDisposition(file.originalName),
+		);
+		// `X-Content-Type-Options: nosniff` chặn trình duyệt tự "đoán" lại định dạng: nếu không, một
+		// tệp `.txt` chứa HTML có thể được render như trang web cùng origin với API.
+		response.setHeader('X-Content-Type-Options', 'nosniff');
+		stream.pipe(response);
 	}
 
 	@Get('submissions')
