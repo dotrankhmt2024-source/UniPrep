@@ -582,6 +582,7 @@ chỉ công khai khi handler/controller có `@Public()`. Danh sách đầy đủ
 | `POST /api/auth/refresh` | Bằng chứng là refresh token trong body |
 | `POST /api/auth/forgot-password` | Người dùng đã quên mật khẩu, có thể không đăng nhập được |
 | `POST /api/auth/reset-password` | Bằng chứng là token một lần trong email |
+| `GET /api/submission-files/:id/view` | **Thêm ở E5** — `<a target="_blank">` **không gửi** header `Authorization`, nên bằng chứng truy cập phải nằm trong URL: token HMAC ngắn hạn (15 phút) scope theo đúng `fileId`, cấp sau khi đã kiểm quyền xem bài nộp |
 
 Mọi route khác (kể cả `POST /api/auth/logout`, `POST /api/auth/change-password`, `GET /api/auth/me`,
 `GET|PATCH /api/users/me`, `GET /api/users`, `GET /api/users/:id`, `PATCH /api/users/:id/status`,
@@ -2461,7 +2462,7 @@ Nộp bài. Hành vi phụ thuộc `quizzes.submission_mode`:
 ```json
 {
   "error": false,
-  "data": {"id":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","submissionId":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","originalName":"Báo cáo đồ án.pdf","mimeType":"application/pdf","fileSizeBytes":2456789,"uploadedBy":"8f2a1b3c-4d5e-4f60-8a91-b2c3d4e5f601","downloadUrl":"/api/submission-files/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/download","createdAt":"2026-10-16T09:20:00Z"},
+  "data": {"id":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","submissionId":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","originalName":"Báo cáo đồ án.pdf","mimeType":"application/pdf","fileSizeBytes":2456789,"uploadedBy":"8f2a1b3c-4d5e-4f60-8a91-b2c3d4e5f601","downloadUrl":"/api/submission-files/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/download","viewUrl":"/api/submission-files/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/view?token=1752…","canPreview":true,"createdAt":"2026-10-16T09:20:00Z"},
   "message": "Thành công"
 }
 ```
@@ -2482,7 +2483,7 @@ Danh sách tệp của một bài nộp.
 ```json
 {
   "error": false,
-  "data": {"submissionId":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","submissionMode":"file","allowUpload":false,"maxFiles":5,"items":[{"id":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","originalName":"Báo cáo đồ án.pdf","mimeType":"application/pdf","fileSizeBytes":2456789,"downloadUrl":"/api/submission-files/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/download","createdAt":"2026-10-16T09:20:00Z"}]},
+  "data": {"submissionId":"a3b4c5d6-e7f8-4091-8aa3-b4c5d6e7f809","submissionMode":"file","allowUpload":false,"maxFiles":5,"items":[{"id":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","originalName":"Báo cáo đồ án.pdf","mimeType":"application/pdf","fileSizeBytes":2456789,"downloadUrl":"/api/submission-files/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/download","viewUrl":"/api/submission-files/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/view?token=1752…","canPreview":true,"createdAt":"2026-10-16T09:20:00Z"}]},
   "message": "Thành công"
 }
 ```
@@ -2510,9 +2511,35 @@ Tải tệp bài nộp. Trả **luồng nhị phân** (`application/octet-stream
 
 **Lỗi thường gặp:** `403`, `404` (không có hàng DB, hoặc tệp không còn trên đĩa).
 
-> **Vì sao không phục vụ tĩnh như học liệu:** `/uploads/**` là `useStaticAssets`, **không** đi qua guard
-> nào — ai có URL là tải được. Với bài làm cá nhân của học viên thì đó là rò rỉ dữ liệu, nên tệp bài nộp
-> đi qua endpoint có xác thực và dùng đúng `assertCanViewSubmission` như `GET /api/submissions/:id`.
+> **Vì sao không phục vụ tĩnh như học liệu:** thư mục tĩnh (`/uploads/lessons/**`) là `useStaticAssets`,
+> **không** đi qua guard nào — ai có URL là tải được, nên `UPLOAD_DIR/submissions/` **không** được mount
+> tĩnh (xem `main.ts`). Với bài làm cá nhân của học viên thì đó là rò rỉ dữ liệu, nên tệp bài nộp đi qua
+> endpoint có xác thực và dùng đúng `assertCanViewSubmission` như `GET /api/submissions/:id`.
+
+#### `GET /api/submission-files/:id/view`
+Mở tệp bài nộp để **trình duyệt tự render** (PDF, ảnh, văn bản) — phục vụ `<a target="_blank">` ở khu
+chấm bài và ở danh sách tệp của học viên. Trả **luồng nhị phân**, không đi qua envelope.
+
+- **Quyền:** **công khai có bằng chứng** — `@Public()` + `?token=` bắt buộc. Token là HMAC-SHA256 ngắn
+  hạn (15 phút), scope theo đúng `fileId`, cấp trong `toSubmissionFile()` **chỉ sau** khi người gọi đã
+  qua `assertCanViewSubmission`. Cầm token ⇒ xem được đúng tệp đó.
+- **Query:** `token` (bắt buộc)
+- **Header trả về:** `Content-Disposition` = `inline` cho MIME render được (`application/pdf`,
+  `image/png`, `image/jpeg`, `text/plain`, `text/csv`, `application/json`) và `attachment` cho phần còn
+  lại; kèm `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store`,
+  `Referrer-Policy: no-referrer`.
+
+**Lỗi thường gặp:** `401` `"Liên kết xem tệp không hợp lệ hoặc đã hết hạn."` (thiếu token, sai chữ ký,
+quá hạn, hoặc token của tệp khác — kiểm token **trước** khi tra DB nên không lộ "tệp có tồn tại hay
+không"), `404` (token hợp lệ nhưng tệp không còn trên đĩa).
+
+> **Vì sao cần token:** `<a target="_blank">` **không** gửi header `Authorization`, nên route chỉ có
+> Bearer không mở được bằng trình duyệt. **Vì sao không nhét access token vào query:** access token là
+> thẻ toàn quyền 15 phút cho mọi endpoint — lọt vào history/log là mất cả phiên; token ở đây chỉ mở được
+> một tệp, và được ký bằng HMAC trên `JWT_SECRET` với tiền tố `submission-file:` (domain separation) nên
+> không thể bị dùng lẫn với JWT. **Giới hạn đã biết:** token không thu hồi được (không lưu DB), nên hạn
+> 15 phút chính là cửa sổ rò rỉ nếu URL lọt ra ngoài; đổi lại không cần bảng mới và không thêm round-trip
+> DB khi phát link.
 
 #### `GET /api/submissions`
 Danh sách bài nộp.
@@ -4454,9 +4481,11 @@ Quy ước đặt tên: hàm `getX` / `getXById` / `createX` / `updateX` / `dele
    - **Tên tệp do server sinh**: `randomUUID()` + đuôi tra từ bảng MIME; tên tệp client gửi
      (`originalname`) **không bao giờ** được nối vào đường dẫn (chống path traversal), và `originalname`
      chỉ dùng làm tiêu đề hiển thị dự phòng.
-   - Phục vụ tĩnh bằng `app.useStaticAssets(resolve(uploadDir), { prefix: '/uploads/' })` ⇒ URL
-     **`/uploads/**`**, **không** có tiền tố `/api` (đây là tệp, không phải endpoint nghiệp vụ: không đi
-     qua `ValidationPipe`/interceptor envelope, và phải mở được trực tiếp trong `<video>`/`<img>`).
+   - Phục vụ tĩnh bằng `app.useStaticAssets(resolve(uploadDir, 'lessons'), { prefix: '/uploads/lessons/' })`
+     ⇒ URL **`/uploads/lessons/**`**, **không** có tiền tố `/api` (đây là tệp, không phải endpoint nghiệp
+     vụ: không đi qua `ValidationPipe`/interceptor envelope, và phải mở được trực tiếp trong
+     `<video>`/`<img>`). **Chỉ** thư mục `lessons/` được mount: `UPLOAD_DIR/submissions/` chứa bài làm
+     cá nhân nên không bao giờ được phục vụ tĩnh (E5 — xem `GET /api/submission-files/:id/view`).
    - `url` trả về là URL **tuyệt đối**, dựng từ biến môi trường **`PUBLIC_BASE_URL`** (mặc định
      `http://localhost:3000`) + `/uploads/<storageKey>` — vì FE chạy ở cổng khác nên đường dẫn tương
      đối không mở được trong thẻ media.

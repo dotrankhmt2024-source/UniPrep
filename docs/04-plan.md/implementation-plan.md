@@ -442,6 +442,7 @@ user story Student ("take practice quizzes"); Instructor ("build multiple-choice
 | E5-T11 | Rẽ nhánh chấm theo `submission_mode`: `file`/`mixed` → `submitted` (chờ chấm), chỉ trắc nghiệm mới tự chấm; cho nộp muộn với `is_late` | P0 | 2,0 | E5-T10 | backend | ✅ | Nộp không có tệp → `400`; `file` xong có `score = null`, `autoGraded = false`; `mixed` có điểm tạm phần trắc nghiệm; giảng viên chốt điểm không được bỏ trống điểm |
 | E5-T12 | Frontend: học viên nộp tệp + xem kết quả và **lịch sử làm bài**; giảng viên xem/tải tệp, chấm điểm, phản hồi; chọn hình thức nộp khi tạo bài tập | P0 | 3,0 | E5-T10, E5-T11 | frontend | ✅ | Tải tệp bằng axios + blob (endpoint cần token, không dùng `<a href>`); lịch sử chỉ hiện bài của chính mình; nút "Nộp bài" khoá khi chưa có tệp |
 | E5-T13 | Test: luồng nộp tệp e2e + IDOR tệp + luật thuần (`submission-file.rules`) | P0 | 2,0 | E5-T11 | backend | ✅ | 11 unit test cho luật + 3 e2e (nộp muộn → chờ chấm → chấm → xem lại; `mixed`; whitelist/trần tệp) |
+| E5-T14 | Xem tệp bài nộp **inline trong trình duyệt** (giảng viên + học viên): route `@Public()` + token HMAC ngắn hạn; siết static assets chỉ còn `uploads/lessons/` | P1 | 1,5 | E5-T10 | backend + frontend | ✅ | 6 unit test token; e2e: `?token=` → `200` + `Content-Disposition: inline`, thiếu token → `401`, token của tệp khác → `401`; `GET /uploads/submissions/…` → `404` |
 
 > **Sửa lỗi phát hiện trong lúc làm E5-T12 (2026-10-16):** tên tệp tiếng Việt bị mojibake
 > (`Báo cáo.pdf` → `BÃ¡o cÃ¡o.pdf`) vì busboy đọc tham số `filename` theo latin1. Đã thêm
