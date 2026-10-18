@@ -19,17 +19,25 @@ import {
 	getQuizSubmissions,
 	getQuizzes,
 	getQuizQuestions,
+	getSubmissionFiles,
 	publishQuiz,
 	updateQuestion,
 	updateSubmissionFeedback,
 } from '@/apis/assessment';
 import { Badge, ErrorBadge, Icon, ISolidBtn } from '@/components';
 import { getApiErrorMessage } from '@/config/query-method/axiosMethod.config';
+import { SUBMISSION_MODE_LABEL } from '@/types';
+import {
+	downloadSubmissionFileToDisk,
+	formatFileSize,
+} from '@/utils/submission-file';
 import type {
 	AssessmentQuestion,
 	AssessmentQuiz,
 	AssessmentSubmission,
 	QuestionType,
+	SubmissionFile,
+	SubmissionMode,
 } from '@/types';
 
 const DEFAULT_OPTIONS = ['', '', '', ''];
@@ -41,6 +49,8 @@ const TeacherQuizManagerPage = () => {
 	const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
 	const [submissions, setSubmissions] = useState<AssessmentSubmission[]>([]);
 	const [title, setTitle] = useState('');
+	const [submissionMode, setSubmissionMode] = useState<SubmissionMode>('quiz');
+	const [maxScore, setMaxScore] = useState<number | null>(10);
 	const [timeLimitMinutes, setTimeLimitMinutes] = useState<number | null>(30);
 	const [maxAttempts, setMaxAttempts] = useState(1);
 	const [question, setQuestion] = useState('');
@@ -61,6 +71,10 @@ const TeacherQuizManagerPage = () => {
 	const [scoreDrafts, setScoreDrafts] = useState<Record<string, number | null>>(
 		{},
 	);
+	/** Tệp của từng bài nộp, chỉ tải khi giảng viên bấm xem (tránh N request cho cả danh sách). */
+	const [expandedFiles, setExpandedFiles] = useState<
+		Record<string, SubmissionFile[]>
+	>({});
 
 	const loadQuizzes = async () => {
 		const response = await getQuizzes({ courseId, page: 1, take: 100 });
@@ -175,6 +189,9 @@ const TeacherQuizManagerPage = () => {
 			const response = await createQuiz({
 				courseId,
 				title: title.trim(),
+				submissionMode,
+				// `maxScore` chỉ có nghĩa với phần nộp tệp; chế độ `quiz` suy điểm từ câu hỏi.
+				maxScore: submissionMode === 'quiz' ? undefined : maxScore,
 				timeLimitMinutes,
 				maxAttempts,
 			});
@@ -182,14 +199,47 @@ const TeacherQuizManagerPage = () => {
 			setTitle('');
 			setActiveQuiz(response.data);
 			setQuestions([]);
+			setSubmissions([]);
+			setExpandedFiles({});
 			await loadQuizzes();
-			message.success('Đã tạo bản nháp bài kiểm tra.');
+			message.success('Đã tạo bản nháp bài tập.');
 		} catch (createError) {
 			message.error(
 				getApiErrorMessage(createError, 'Không tạo được bài kiểm tra.'),
 			);
 		} finally {
 			setBusy(false);
+		}
+	};
+
+	/** Mở/đóng danh sách tệp của một bài nộp (tải theo yêu cầu, không tải cả danh sách). */
+	const handleToggleFiles = async (submissionId: string) => {
+		if (expandedFiles[submissionId]) {
+			setExpandedFiles((current) => {
+				const next = { ...current };
+				delete next[submissionId];
+				return next;
+			});
+			return;
+		}
+		try {
+			const response = await getSubmissionFiles(submissionId);
+			setExpandedFiles((current) => ({
+				...current,
+				[submissionId]: response.data?.items ?? [],
+			}));
+		} catch (loadError) {
+			message.error(
+				getApiErrorMessage(loadError, 'Không tải được tệp bài nộp.'),
+			);
+		}
+	};
+
+	const handleDownloadFile = async (file: SubmissionFile) => {
+		try {
+			await downloadSubmissionFileToDisk(file);
+		} catch (downloadError) {
+			message.error(getApiErrorMessage(downloadError, 'Không tải được tệp.'));
 		}
 	};
 
@@ -229,10 +279,18 @@ const TeacherQuizManagerPage = () => {
 		if (!activeQuiz) return;
 		setBusy(true);
 		try {
-			await publishQuiz(activeQuiz.id);
+			const response = await publishQuiz(activeQuiz.id);
 			await loadQuizzes();
-			setActiveQuiz({ ...activeQuiz, status: 'published' });
-			message.success('Đã công bố bài kiểm tra.');
+			// Lấy `status` **do server trả về** (`publishQuiz` trả `statusOf(quiz)`) thay vì hard-code
+			// `'published'`: một bài đã có `dueAt` trong quá khứ được công bố ở trạng thái `closed`, và
+			// hard-code sẽ làm giao diện nói dối cho tới lần tải lại kế tiếp.
+			setActiveQuiz({
+				...activeQuiz,
+				status:
+					(response.data?.status as AssessmentQuiz['status'] | undefined) ??
+					'published',
+			});
+			message.success('Đã công bố bài tập.');
 		} catch (publishError) {
 			message.error(
 				getApiErrorMessage(publishError, 'Không thể công bố bài kiểm tra.'),
@@ -241,6 +299,15 @@ const TeacherQuizManagerPage = () => {
 			setBusy(false);
 		}
 	};
+
+	/**
+	 * `closed` = đã công bố nhưng đã qua `dueAt`. Về nghiệp vụ nó **vẫn là "đã công bố"**: câu hỏi phải
+	 * khoá, và **khu chấm điểm phải hiện** — quá hạn chính là lúc nhiều bài nộp đang chờ chấm nhất
+	 * (kể cả bài nộp muộn, vốn được phép ở chế độ nộp tệp). Trước đây các điều kiện so sánh cứng với
+	 * `'published'` nên một bài quá hạn làm mất luôn màn hình chấm điểm của giảng viên.
+	 */
+	const isDraft = activeQuiz?.status === 'draft';
+	const canGrade = !!activeQuiz && !isDraft;
 
 	return (
 		<div className="mx-auto max-w-6xl space-y-space-lg p-gutter">
@@ -270,6 +337,19 @@ const TeacherQuizManagerPage = () => {
 							onChange={(event) => setTitle(event.target.value)}
 							maxLength={200}
 						/>
+						<label className="block space-y-1 font-label-sm text-on-surface-variant">
+							Hình thức nộp
+							<Select
+								className="w-full"
+								value={submissionMode}
+								onChange={(value: SubmissionMode) => setSubmissionMode(value)}
+								options={[
+									{ value: 'quiz', label: 'Trắc nghiệm' },
+									{ value: 'file', label: 'Nộp tệp' },
+									{ value: 'mixed', label: 'Trắc nghiệm + nộp tệp' },
+								]}
+							/>
+						</label>
 						<div className="grid grid-cols-2 gap-space-sm">
 							<label className="space-y-1 font-label-sm text-on-surface-variant">
 								Thời lượng
@@ -293,6 +373,18 @@ const TeacherQuizManagerPage = () => {
 								/>
 							</label>
 						</div>
+						{submissionMode !== 'quiz' && (
+							<label className="block space-y-1 font-label-sm text-on-surface-variant">
+								Điểm tối đa phần nộp tệp
+								<InputNumber
+									className="w-full"
+									min={0}
+									max={1000}
+									value={maxScore}
+									onChange={setMaxScore}
+								/>
+							</label>
+						)}
 						<ISolidBtn
 							type="primary"
 							background="primary"
@@ -320,13 +412,24 @@ const TeacherQuizManagerPage = () => {
 									<span className="mt-1 flex items-center gap-2">
 										<Badge
 											status={
-												quiz.status === 'published' ? 'success' : 'neutral'
+												quiz.status === 'draft'
+													? 'neutral'
+													: quiz.status === 'closed'
+														? 'warning'
+														: 'success'
 											}
 										>
-											{quiz.status === 'published' ? 'Đã công bố' : 'Bản nháp'}
+											{quiz.status === 'draft'
+												? 'Bản nháp'
+												: quiz.status === 'closed'
+													? 'Đã công bố · quá hạn'
+													: 'Đã công bố'}
 										</Badge>
 										<span className="font-body-sm text-on-surface-variant">
-											{quiz.questionCount} câu
+											{SUBMISSION_MODE_LABEL[quiz.submissionMode]}
+											{quiz.questionCount > 0
+												? ` · ${quiz.questionCount} câu`
+												: ''}
 										</span>
 									</span>
 								</button>
@@ -343,15 +446,22 @@ const TeacherQuizManagerPage = () => {
 										{activeQuiz.title}
 									</h2>
 									<p className="font-body-sm text-on-surface-variant">
-										{questions.length} câu đã lưu
+										{SUBMISSION_MODE_LABEL[activeQuiz.submissionMode]}
+										{activeQuiz.submissionMode === 'quiz'
+											? ` · ${questions.length} câu đã lưu`
+											: ` · ${questions.length} câu trắc nghiệm · thang điểm ${activeQuiz.totalPoints}`}
 									</p>
 								</div>
-								{activeQuiz.status !== 'published' && (
+								{activeQuiz.status === 'draft' && (
 									<ISolidBtn
 										type="primary"
 										background="primary"
 										loading={busy}
-										disabled={questions.length === 0}
+										// Bài nộp tệp không cần câu hỏi nào mới công bố được.
+										disabled={
+											activeQuiz.submissionMode === 'quiz' &&
+											questions.length === 0
+										}
 										onClick={() => void handlePublish()}
 									>
 										Công bố
@@ -395,7 +505,7 @@ const TeacherQuizManagerPage = () => {
 													{item.options.length} phương án · {item.points} điểm
 												</p>
 											</div>
-											{activeQuiz.status !== 'published' && (
+											{activeQuiz.status === 'draft' && (
 												<div className="flex gap-space-xs">
 													<Button
 														onClick={() => {
@@ -417,7 +527,7 @@ const TeacherQuizManagerPage = () => {
 									)}
 								</article>
 							))}
-							{activeQuiz.status !== 'published' ? (
+							{isDraft ? (
 								<section className="space-y-space-md border-y border-outline-variant py-space-md">
 									<h3 className="font-title-lg text-on-surface">
 										Thêm câu hỏi
@@ -500,11 +610,15 @@ const TeacherQuizManagerPage = () => {
 								<Alert
 									type="info"
 									showIcon
-									message="Bài kiểm tra đã công bố."
-									description="Để bảo toàn lượt làm và điểm đã ghi nhận, cấu trúc câu hỏi hiện đã khoá."
+									message={
+										activeQuiz.status === 'closed'
+											? 'Bài tập đã quá hạn nộp.'
+											: 'Bài tập đã công bố.'
+									}
+									description="Để bảo toàn lượt làm và điểm đã ghi nhận, cấu trúc câu hỏi hiện đã khoá. Khu chấm điểm vẫn dùng được bên dưới."
 								/>
 							)}
-							{activeQuiz.status === 'published' && (
+							{canGrade && (
 								<section className="space-y-space-md border-t border-outline-variant pt-space-lg">
 									<h3 className="font-title-lg text-on-surface">
 										Bài nộp & phản hồi
@@ -531,6 +645,7 @@ const TeacherQuizManagerPage = () => {
 																		submission.submittedAt,
 																	).toLocaleString('vi-VN')
 																: 'Đang làm'}
+															{submission.isLate ? ' · Nộp muộn' : ''}
 														</p>
 													</div>
 													<Badge
@@ -544,6 +659,59 @@ const TeacherQuizManagerPage = () => {
 														{submission.maxScore ?? '—'}
 													</Badge>
 												</div>
+												{submission.fileCount > 0 && (
+													<div className="space-y-space-xs">
+														<Button
+															size="small"
+															onClick={() =>
+																void handleToggleFiles(submission.id)
+															}
+														>
+															{expandedFiles[submission.id]
+																? 'Ẩn tệp bài làm'
+																: `Xem ${submission.fileCount} tệp bài làm`}
+														</Button>
+														{expandedFiles[submission.id] && (
+															<ul className="space-y-space-xs">
+																{expandedFiles[submission.id].map((file) => (
+																	<li
+																		key={file.id}
+																		className="flex flex-wrap items-center justify-between gap-space-sm border-b border-outline-variant pb-space-xs"
+																	>
+																		<span className="flex flex-col">
+																			<span className="font-body-md text-on-surface">
+																				{file.originalName}
+																			</span>
+																			<span className="font-body-sm text-on-surface-variant">
+																				{formatFileSize(file.fileSizeBytes)}
+																			</span>
+																		</span>
+																		<span className="flex shrink-0 items-center gap-space-xs">
+																			{file.canPreview && (
+																				<Button
+																					size="small"
+																					href={file.viewUrl}
+																					target="_blank"
+																					rel="noopener noreferrer"
+																				>
+																					Xem
+																				</Button>
+																			)}
+																			<Button
+																				size="small"
+																				onClick={() =>
+																					void handleDownloadFile(file)
+																				}
+																			>
+																				Tải xuống
+																			</Button>
+																		</span>
+																	</li>
+																))}
+															</ul>
+														)}
+													</div>
+												)}
 												<InputNumber
 													className="w-full"
 													min={0}

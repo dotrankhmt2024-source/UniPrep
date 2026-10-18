@@ -264,7 +264,9 @@ DTO nested error surfaces as `profile.address: address should not be empty`.
 **Authentication:** every route requires `Authorization: Bearer <accessToken>` unless it is marked
 `@Public()`. Public routes are exactly: `GET /api`, `GET /api/health`, `POST /api/auth/register`,
 `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/forgot-password`,
-`POST /api/auth/reset-password`.
+`POST /api/auth/reset-password`, and `GET /api/submission-files/:id/view` — the last one because
+`<a target="_blank">` cannot send an `Authorization` header, so it carries a short-lived HMAC token in
+`?token=` (scoped to one file, minted only after the normal permission check).
 
 | Aspect | Behaviour |
 |---|---|
@@ -483,9 +485,15 @@ Ordered roughly by dependency. Nothing below exists in the codebase yet except w
   part is deferred to E13-T4.
 - The dev password-reset email is a server log line, not a real email (no mail module yet).
 - Uploaded material files live on **local disk** (`UPLOAD_DIR`, default `./uploads`, gitignored) and
-  are served statically at `/uploads/**`; `fileUrl` is built from `PUBLIC_BASE_URL`. That does not
-  share across instances — a deployment with more than one node needs a shared volume or object
-  storage (recorded as resolved-with-caveat in `docs/02-specs/api-specification.md` §13).
+  are served statically at `/uploads/lessons/**` — **only** the `lessons/` subtree is mounted, because
+  `UPLOAD_DIR/submissions/` holds learners' personal work and must never be reachable without an
+  authorization check. `fileUrl` is built from `PUBLIC_BASE_URL`. That does not share across
+  instances — a deployment with more than one node needs a shared volume or object storage (recorded
+  as resolved-with-caveat in `docs/02-specs/api-specification.md` §13).
+- Submission files are served through authenticated endpoints only: `GET /api/submission-files/:id/download`
+  (Bearer) and `GET /api/submission-files/:id/view?token=…` (short-lived HMAC token in the URL, so the
+  browser can render PDFs inline). The view token cannot be revoked — it simply expires after 15
+  minutes, which is the leak window if a URL escapes.
 - Lesson HTML is stored verbatim and sanitized **in the browser** at render time (`utils/html.ts`,
   DOMPurify with an allowlist). Server-side sanitization on write is the hardening step if content
   ever becomes author-supplied by untrusted roles.

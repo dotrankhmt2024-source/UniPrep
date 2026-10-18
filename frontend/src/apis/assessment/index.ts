@@ -9,6 +9,8 @@ import type {
 	DefaultResponseType,
 	QuizAttempt,
 	QuizSubmissionResult,
+	SubmissionFile,
+	SubmissionFilesResponse,
 	SubmissionReview,
 	FeedbackPayload,
 } from '@/types';
@@ -93,9 +95,15 @@ export const getQuizAttempt = (attemptId: string) =>
 		DefaultResponseType<QuizAttempt>
 	>;
 
+/**
+ * `POST /api/submissions` — nộp bài.
+ *
+ * `answers` là **tuỳ chọn** vì chế độ `file`/`mixed` có thể không có câu hỏi trắc nghiệm nào; ràng
+ * buộc "chế độ `quiz` phải có đáp án" do backend kiểm tra theo `submission_mode` của quiz.
+ */
 export const submitQuizAttempt = (payload: {
 	attemptId: string;
-	answers: Array<{ questionId: string; selectedOptionIds: string[] }>;
+	answers?: Array<{ questionId: string; selectedOptionIds: string[] }>;
 }) =>
 	queryMethod.post('/submissions', payload) as Promise<
 		DefaultResponseType<QuizSubmissionResult>
@@ -105,3 +113,44 @@ export const getSubmissionReview = (submissionId: string) =>
 	queryMethod.get(`/submissions/${submissionId}/review`) as Promise<
 		DefaultResponseType<SubmissionReview>
 	>;
+
+/** `GET /api/submissions/:id/files` — kèm cờ `allowUpload` do server quyết định. */
+export const getSubmissionFiles = (submissionId: string) =>
+	queryMethod.get(`/submissions/${submissionId}/files`) as Promise<
+		DefaultResponseType<SubmissionFilesResponse>
+	>;
+
+/**
+ * `POST /api/submissions/:id/files` — `multipart/form-data`, trường `file`.
+ *
+ * Cố ý **không** đặt `Content-Type` thủ công: trình duyệt phải tự thêm `boundary`, nếu tự đặt thì
+ * server không tách được các phần của form (bài học đã ghi ở `apis/material`).
+ *
+ * Lỗi cần xử lý ở tầng trang: `413` (quá `MAX_UPLOAD_SIZE_MB`), `415` (sai định dạng),
+ * `400` (quá trần số tệp), `409` (lượt đã nộp hoặc đã hết hạn).
+ */
+export const uploadSubmissionFile = (submissionId: string, file: File) => {
+	const formData = new FormData();
+	formData.append('file', file);
+
+	return queryMethod.post(
+		`/submissions/${submissionId}/files`,
+		formData,
+	) as Promise<DefaultResponseType<SubmissionFile>>;
+};
+
+/** `DELETE /api/submission-files/:id` — chỉ thành công khi lượt làm còn đang mở. */
+export const deleteSubmissionFile = (fileId: string) =>
+	queryMethod.delete(`/submission-files/${fileId}`) as Promise<
+		DefaultResponseType<{ success: boolean }>
+	>;
+
+/**
+ * `GET /api/submission-files/:id/download` — tệp bài nộp **cần** token, khác học liệu (`/uploads/**`
+ * là tĩnh). Vì vậy không thể dùng `<a href>` trực tiếp: phải tải bằng axios rồi tạo blob URL, nếu
+ * không trình duyệt sẽ mở một tab không có header `Authorization` và nhận `401`.
+ */
+export const downloadSubmissionFile = (fileId: string): Promise<Blob> =>
+	queryMethod.get(`/submission-files/${fileId}/download`, {
+		responseType: 'blob',
+	}) as unknown as Promise<Blob>;

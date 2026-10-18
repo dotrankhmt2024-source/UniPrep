@@ -28,6 +28,7 @@ import {
 	UPLOAD_MIME_LABEL,
 	UPLOAD_MIME_MAP,
 } from '../storage/storage.service';
+import { decodeUploadFileName } from '../storage/upload-file-name';
 import {
 	toLessonDetail,
 	toLessonListItem,
@@ -890,9 +891,13 @@ export class LessonService {
 		// Ghi tệp trước, ghi DB sau: nếu bước DB lỗi thì chỉ còn một tệp mồ côi (dọn bằng tay hoặc bỏ
 		// qua), trong khi thứ tự ngược lại để lại hàng DB trỏ tới tệp không tồn tại — FE hiển thị học
 		// liệu hỏng mà không có cách nào tự phát hiện.
+		//
+		// Tên tệp phải giải mã latin1→utf8 trước khi dùng: multer/busboy trả tên tiếng Việt ở dạng
+		// mojibake (`upload-file-name.ts`).
+		const originalName = decodeUploadFileName(file.originalname);
 		const saved = await this.storage.saveBuffer({
 			folder: `lessons/${lessonId}`,
-			originalName: file.originalname,
+			originalName,
 			buffer: file.buffer,
 			mimeType: file.mimetype,
 		});
@@ -904,7 +909,7 @@ export class LessonService {
 					materialType: mapping.materialType,
 					// Tiêu đề lấy từ form; tên tệp gốc chỉ là phương án dự phòng **hiển thị** (nó không
 					// đi vào đường dẫn tệp — xem `StorageService.saveBuffer`).
-					title: dto.title?.trim() || file.originalname.slice(0, 255),
+					title: dto.title?.trim() || originalName.slice(0, 255),
 					content: null,
 					url: saved.fileUrl,
 					storageKey: saved.storageKey,

@@ -3,20 +3,35 @@ import {
 	ConflictException,
 	ForbiddenException,
 	Injectable,
+	Logger,
 	NotFoundException,
+	PayloadTooLargeException,
+	UnsupportedMediaTypeException,
+	UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 import type { AuthUser } from '../auth/types/authenticated-user.type';
+import type { SubmissionMode } from '../common/types';
 import { buildPageMeta, toSkip } from '../common/utils/pagination.util';
 import { CourseAccessService } from '../course/course-access.service';
 import { Course } from '../course/entities/course.entity';
 import { Enrollment } from '../course/entities/enrollment.entity';
+import {
+	ALLOWED_SUBMISSION_MIME_TYPES,
+	MISSING_FILE_MESSAGE,
+	StorageService,
+	SUBMISSION_MIME_LABEL,
+	SUBMISSION_MIME_MAP,
+} from '../storage/storage.service';
+import { decodeUploadFileName } from '../storage/upload-file-name';
 import { Quiz } from './entities/quiz.entity';
 import { QuizQuestion } from './entities/quiz-question.entity';
 import { QuizOption } from './entities/quiz-option.entity';
 import { Submission } from './entities/submission.entity';
 import { SubmissionAnswer } from './entities/submission-answer.entity';
+import { SubmissionFile } from './entities/submission-file.entity';
 import type {
 	CreateQuestionDto,
 	CreateQuizDto,
@@ -28,11 +43,42 @@ import type {
 	UpdateQuizDto,
 } from './dto/assessment.dto';
 import { gradeObjectiveQuestions } from './assessment-grading';
-
+import {
+	MAX_SUBMISSION_FILES,
+	SUBMISSION_FILE_FOLDER,
+	allowsLateSubmission,
+	canAttachFile,
+	canUploadMoreFiles,
+	isAutoGradedOnSubmit,
+	needsSubmissionFile,
+	requiresQuestions,
+	submissionStatusAfterSubmit,
+	totalMaxScore,
+	isInlineViewable,
+} from './submission-file.rules';
+import {
+	signSubmissionFileToken,
+	verifySubmissionFileToken,
+} from './submission-file-token';
 type QuestionWithOptions = QuizQuestion & { options: QuizOption[] };
+
+/**
+ * Hình dạng tối thiểu của tệp multer mà tầng service cần.
+ *
+ * Khai báo cục bộ (không import `UploadedFileLike` từ `LessonModule`) để `ExerciseModule` không
+ * phụ thuộc ngược vào module bài học — hai module chỉ chia sẻ hạ tầng qua `StorageService`.
+ */
+export interface SubmissionUploadFile {
+	originalname: string;
+	mimetype: string;
+	size: number;
+	buffer: Buffer;
+}
 
 @Injectable()
 export class ExerciseService {
+	private readonly logger = new Logger(ExerciseService.name);
+
 	constructor(
 		@InjectRepository(Course)
 		private readonly courses: Repository<Course>,
@@ -48,7 +94,11 @@ export class ExerciseService {
 		private readonly submissions: Repository<Submission>,
 		@InjectRepository(SubmissionAnswer)
 		private readonly answers: Repository<SubmissionAnswer>,
+		@InjectRepository(SubmissionFile)
+		private readonly files: Repository<SubmissionFile>,
 		private readonly courseAccess: CourseAccessService,
+		private readonly configService: ConfigService, // Dòng mới thêm
+		private readonly storage: StorageService,
 		private readonly dataSource: DataSource,
 	) {}
 
@@ -134,6 +184,9 @@ export class ExerciseService {
 	async createQuiz(actor: AuthUser, dto: CreateQuizDto) {
 		const course = await this.courseAccess.assertCanManage(dto.courseId, actor);
 		this.assertDateRange(dto.openAt, dto.closeAt);
+		// Chế độ `quiz` không dùng `max_score` (điểm tối đa suy từ tổng điểm câu hỏi) nên ép `NULL`
+		// để dữ liệu không mang một con số vô nghĩa gây hiểu nhầm khi đọc bảng.
+		const mode: SubmissionMode = dto.submissionMode ?? 'quiz';
 		const quiz = await this.quizzes.save(
 			this.quizzes.create({
 				courseId: course.id,
@@ -145,6 +198,8 @@ export class ExerciseService {
 				maxAttempts: dto.maxAttempts ?? 1,
 				passScore: dto.passScore ?? null,
 				shuffleQuestions: dto.shuffleQuestions ?? false,
+				submissionMode: mode,
+				maxScore: requiresQuestions(mode) ? null : (dto.maxScore ?? null),
 				availableFrom: dto.openAt ? new Date(dto.openAt) : null,
 				dueAt: dto.closeAt ? new Date(dto.closeAt) : null,
 				createdBy: actor.id,
@@ -198,6 +253,11 @@ export class ExerciseService {
 		if (dto.passScore !== undefined) quiz.passScore = dto.passScore;
 		if (dto.shuffleQuestions !== undefined)
 			quiz.shuffleQuestions = dto.shuffleQuestions;
+		if (dto.submissionMode !== undefined)
+			quiz.submissionMode = dto.submissionMode;
+		if (dto.maxScore !== undefined) quiz.maxScore = dto.maxScore;
+		// Đổi sang chế độ `quiz` thì `max_score` không còn nghĩa — xoá để không lưu số dư thừa.
+		if (requiresQuestions(quiz.submissionMode)) quiz.maxScore = null;
 		quiz.availableFrom = openAt;
 		quiz.dueAt = closeAt;
 		return this.toQuizSummary(await this.quizzes.save(quiz), actor);
@@ -215,9 +275,14 @@ export class ExerciseService {
 
 	async publishQuiz(id: string, actor: AuthUser) {
 		const quiz = await this.assertCanManageQuiz(id, actor);
-		if ((await this.questions.count({ where: { quizId: id } })) === 0) {
+		// Chỉ chế độ `quiz` mới bắt buộc có câu hỏi: bài tập nộp tệp không có câu hỏi nào vẫn hợp lệ,
+		// và trước đây điều kiện này chặn cứng nên không thể công bố bài nộp tệp.
+		if (
+			requiresQuestions(quiz.submissionMode) &&
+			(await this.questions.count({ where: { quizId: id } })) === 0
+		) {
 			throw new BadRequestException(
-				'Bài kiểm tra phải có ít nhất một câu hỏi.',
+				'Bài kiểm tra trắc nghiệm phải có ít nhất một câu hỏi.',
 			);
 		}
 		quiz.isPublished = true;
@@ -322,8 +387,13 @@ export class ExerciseService {
 		if (!enrollment)
 			throw new ForbiddenException('Bạn chưa ghi danh khoá học này.');
 		const questions = await this.questionQuery(quizId, false);
-		if (!questions.length)
+		// Bài tập nộp tệp hợp lệ dù không có câu hỏi nào; chỉ trắc nghiệm mới bắt buộc có câu hỏi.
+		if (requiresQuestions(quiz.submissionMode) && !questions.length)
 			throw new BadRequestException('Bài kiểm tra chưa có câu hỏi.');
+		const questionPoints = questions.reduce(
+			(sum, question) => sum + Number(question.points),
+			0,
+		);
 		const submission = await this.submissions.save(
 			this.submissions.create({
 				quizId,
@@ -332,9 +402,10 @@ export class ExerciseService {
 				courseId: quiz.courseId,
 				attemptNo: attemptCount + 1,
 				status: 'in_progress',
-				maxScore: questions.reduce(
-					(sum, question) => sum + Number(question.points),
-					0,
+				maxScore: totalMaxScore(
+					quiz.submissionMode,
+					quiz.maxScore,
+					questionPoints,
 				),
 			}),
 		);
@@ -375,23 +446,49 @@ export class ExerciseService {
 			throw new ConflictException('Lượt làm bài này đã được nộp.');
 		}
 		const quiz = await this.findQuizOrFail(submission.quizId);
+		const mode = quiz.submissionMode;
 		const expiresAt = this.expiresAt(submission, quiz);
 		if (expiresAt && new Date() >= expiresAt) {
 			submission.status = 'expired';
 			await this.submissions.save(submission);
 			throw new ConflictException('Lượt làm bài đã hết hạn.');
 		}
-		if (quiz.dueAt && new Date() > quiz.dueAt) {
+		// Chỉ trắc nghiệm mới đóng cứng theo hạn nộp; `file`/`mixed` nộp muộn vẫn được ghi nhận
+		// (`is_late = true`) — xem `submission-file.rules.ts`.
+		if (!allowsLateSubmission(mode) && quiz.dueAt && new Date() > quiz.dueAt) {
 			submission.status = 'expired';
 			await this.submissions.save(submission);
 			throw new ConflictException('Bài kiểm tra đã đóng.');
 		}
 
+		const answers = dto.answers ?? [];
 		const questions = await this.questionQuery(quiz.id, true);
-		const grading = gradeObjectiveQuestions(questions, dto.answers);
-		const answerRows = grading.answers;
-		const { score, correctCount } = grading;
+		const questionPoints = questions.reduce(
+			(sum, question) => sum + Number(question.points),
+			0,
+		);
 
+		let grading: ReturnType<typeof gradeObjectiveQuestions> = {
+			answers: [],
+			score: 0,
+			correctCount: 0,
+		};
+		if (requiresQuestions(mode)) {
+			if (!answers.length) {
+				throw new BadRequestException('Vui lòng trả lời ít nhất một câu hỏi.');
+			}
+			grading = gradeObjectiveQuestions(questions, answers);
+		} else if (questions.length) {
+			// `mixed`: phần trắc nghiệm được chấm tự động và lưu làm **điểm tạm**; giảng viên chốt
+			// điểm cuối cùng qua `PATCH /api/submissions/:id/feedback`.
+			grading = gradeObjectiveQuestions(questions, answers);
+		}
+
+		const autoGraded = isAutoGradedOnSubmit(mode);
+		const hasGradedAnswers = autoGraded || questions.length > 0;
+		const statusAfter = submissionStatusAfterSubmit(mode);
+		const finalScore = hasGradedAnswers ? grading.score : null;
+		const maxScore = totalMaxScore(mode, quiz.maxScore, questionPoints);
 		const submittedAt = new Date();
 		const elapsed = Math.max(
 			0,
@@ -400,49 +497,313 @@ export class ExerciseService {
 			),
 		);
 		const late = !!quiz.dueAt && submittedAt > quiz.dueAt;
+		let savedFileCount = 0;
+
 		await this.dataSource.transaction(async (manager) => {
-			await manager.getRepository(SubmissionAnswer).save(
-				answerRows.map((answer) =>
-					manager.getRepository(SubmissionAnswer).create({
-						submissionId: submission.id,
-						questionId: answer.questionId,
-						selectedOptionIds: answer.selectedOptionIds,
-						isCorrect: answer.isCorrect,
-						pointsAwarded: answer.pointsAwarded,
-					}),
-				),
-			);
-			submission.score = score;
-			submission.maxScore = questions.reduce(
-				(sum, question) => sum + Number(question.points),
-				0,
-			);
-			submission.correctCount = correctCount;
-			submission.totalQuestions = questions.length;
-			submission.status = 'graded';
-			submission.submittedAt = submittedAt;
-			submission.gradedAt = submittedAt;
-			submission.durationSeconds = elapsed;
-			submission.isLate = late;
-			await manager.getRepository(Submission).save(submission);
+			// Khoá hàng bài nộp: chặn đua với `addSubmissionFile`/`deleteSubmissionFile` đang chạy
+			// song song, nếu không có thể nộp thành công trong khi tệp cuối vẫn đang được ghi.
+			const locked = await manager.getRepository(Submission).findOne({
+				where: { id: submission.id },
+				lock: { mode: 'pessimistic_write' },
+			});
+			if (!locked || locked.status !== 'in_progress') {
+				throw new ConflictException('Lượt làm bài này đã được nộp.');
+			}
+			savedFileCount = await manager
+				.getRepository(SubmissionFile)
+				.count({ where: { submissionId: submission.id } });
+			if (needsSubmissionFile(mode) && savedFileCount === 0) {
+				throw new BadRequestException(
+					'Vui lòng đính kèm ít nhất một tệp trước khi nộp bài.',
+				);
+			}
+			if (grading.answers.length) {
+				await manager.getRepository(SubmissionAnswer).save(
+					grading.answers.map((answer) =>
+						manager.getRepository(SubmissionAnswer).create({
+							submissionId: submission.id,
+							questionId: answer.questionId,
+							selectedOptionIds: answer.selectedOptionIds,
+							isCorrect: answer.isCorrect,
+							pointsAwarded: answer.pointsAwarded,
+						}),
+					),
+				);
+			}
+			locked.score = finalScore;
+			locked.maxScore = maxScore;
+			locked.correctCount = hasGradedAnswers ? grading.correctCount : null;
+			locked.totalQuestions = questions.length || null;
+			locked.status = statusAfter;
+			locked.submittedAt = submittedAt;
+			// Chờ chấm tay thì `graded_at` phải để trống, nếu không dữ liệu nói dối rằng bài đã chấm.
+			locked.gradedAt = autoGraded ? submittedAt : null;
+			locked.durationSeconds = elapsed;
+			locked.isLate = late;
+			await manager.getRepository(Submission).save(locked);
 		});
+
 		return {
 			id: submission.id,
 			attemptId: submission.id,
 			quizId: quiz.id,
 			userId: actor.id,
-			status: submission.status,
-			score: submission.score,
-			maxScore: submission.maxScore,
-			correctCount,
+			submissionMode: mode,
+			status: statusAfter,
+			score: finalScore,
+			maxScore,
+			correctCount: hasGradedAnswers ? grading.correctCount : null,
 			totalQuestions: questions.length,
-			passed: quiz.passScore == null ? null : score >= quiz.passScore,
-			autoGraded: true,
+			passed:
+				statusAfter === 'graded' && quiz.passScore != null
+					? finalScore !== null && finalScore >= quiz.passScore
+					: null,
+			autoGraded,
+			// Cờ tường minh cho FE: `score` hiện tại là điểm tạm hay điểm đã chốt.
+			awaitingManualGrading: !autoGraded,
 			submittedAt,
-			gradedAt: submittedAt,
+			gradedAt: autoGraded ? submittedAt : null,
 			attemptNo: submission.attemptNo,
 			durationSeconds: elapsed,
+			isLate: late,
+			fileCount: savedFileCount,
 		};
+	}
+
+	// =========================================================================
+	// Tệp bài nộp (yêu cầu 4.4 — "bài tập nộp tệp")
+	// =========================================================================
+
+	/**
+	 * `POST /api/submissions/:id/files` — học viên đính kèm tệp vào lượt làm đang mở.
+	 *
+	 * Thứ tự kiểm tra theo đúng `LessonService.createMaterial`: quyền/trạng thái → có tệp → MIME →
+	 * dung lượng → ghi đĩa → ghi DB. Kiểm MIME **trước** dung lượng để tệp `.exe` 100 MB nhận đúng
+	 * thông báo "định dạng không hỗ trợ" thay vì "quá lớn"; ghi đĩa **trước** DB kèm bù trừ để không
+	 * bao giờ có hàng DB trỏ tới tệp không tồn tại.
+	 */
+	async addSubmissionFile(
+		submissionId: string,
+		file: SubmissionUploadFile | undefined,
+		actor: AuthUser,
+	) {
+		const submission = await this.findSubmissionOrFail(submissionId);
+		const quiz = await this.findQuizOrFail(submission.quizId);
+		if (actor.role !== 'student' || submission.userId !== actor.id) {
+			throw new ForbiddenException(
+				'Chỉ học viên sở hữu lượt làm mới được đính kèm tệp.',
+			);
+		}
+		if (!canAttachFile(submission.status)) {
+			throw new ConflictException(
+				'Chỉ có thể đính kèm tệp khi lượt làm đang diễn ra.',
+			);
+		}
+		if (!needsSubmissionFile(quiz.submissionMode)) {
+			throw new BadRequestException(
+				'Bài kiểm tra này chỉ nhận đáp án trắc nghiệm.',
+			);
+		}
+		const expiresAt = this.expiresAt(submission, quiz);
+		if (expiresAt && new Date() >= expiresAt) {
+			submission.status = 'expired';
+			await this.submissions.save(submission);
+			throw new ConflictException('Lượt làm bài đã hết hạn.');
+		}
+		if (!file?.buffer) {
+			throw new BadRequestException(MISSING_FILE_MESSAGE);
+		}
+		if (!SUBMISSION_MIME_MAP[file.mimetype]) {
+			throw new UnsupportedMediaTypeException(
+				`Định dạng tệp không được hỗ trợ. Chỉ nhận: ${this.describeAllowedSubmissionMimeTypes()}.`,
+			);
+		}
+		if (file.size > this.storage.maxSizeBytes) {
+			throw new PayloadTooLargeException(
+				`Tệp vượt quá dung lượng cho phép (tối đa ${this.storage.maxSizeMb} MB).`,
+			);
+		}
+
+		// Tên gốc dài hơn cột `original_name` sẽ làm hỏng INSERT; cắt trước khi lưu. Đuôi tệp trên
+		// đĩa do MIME quyết định (`StorageService.resolveExtension`) nên việc cắt này vô hại.
+		// Giải mã latin1→utf8 trước: multer/busboy trả tên tiếng Việt ở dạng mojibake.
+		const originalName = decodeUploadFileName(file.originalname).slice(0, 255);
+		const saved = await this.storage.saveBuffer({
+			folder: `${SUBMISSION_FILE_FOLDER}/${submissionId}`,
+			originalName,
+			buffer: file.buffer,
+			mimeType: file.mimetype,
+		});
+
+		try {
+			const row = await this.dataSource.transaction(async (manager) => {
+				// Khoá hàng bài nộp: "đếm số tệp rồi ghi" phải là một khối duy nhất, nếu không hai
+				// request upload song song cùng lúc có thể vượt trần số tệp, và `submit` có thể chốt
+				// lượt trong khi tệp cuối vẫn đang được ghi.
+				const locked = await manager.getRepository(Submission).findOne({
+					where: { id: submissionId },
+					lock: { mode: 'pessimistic_write' },
+				});
+				if (!locked || !canAttachFile(locked.status)) {
+					throw new ConflictException(
+						'Chỉ có thể đính kèm tệp khi lượt làm đang diễn ra.',
+					);
+				}
+				const currentCount = await manager
+					.getRepository(SubmissionFile)
+					.count({ where: { submissionId } });
+				if (!canUploadMoreFiles(currentCount)) {
+					throw new BadRequestException(
+						`Mỗi lượt nộp tối đa ${MAX_SUBMISSION_FILES} tệp.`,
+					);
+				}
+				const repo = manager.getRepository(SubmissionFile);
+				return repo.save(
+					repo.create({
+						submissionId,
+						uploadedBy: actor.id,
+						originalName,
+						storageKey: saved.storageKey,
+						mimeType: file.mimetype,
+						fileSizeBytes: file.size,
+					}),
+				);
+			});
+			return this.toSubmissionFile(row);
+		} catch (error) {
+			// Bù trừ: hàng DB không được tạo thì tệp vừa ghi là rác. Ghi log vì đây là lỗi hiếm và
+			// người vận hành cần biết có tệp mồ côi trong `UPLOAD_DIR`.
+			this.logger.error(
+				`Không tạo được tệp cho bài nộp ${submissionId}, đã xoá tệp ${saved.storageKey}`,
+			);
+			await this.storage.remove(saved.storageKey);
+			throw error;
+		}
+	}
+
+	/** `GET /api/submissions/:id/files` — học viên sở hữu, giảng viên phụ trách, admin. */
+	async findSubmissionFiles(submissionId: string, actor: AuthUser) {
+		const submission = await this.findSubmissionOrFail(submissionId);
+		const quiz = await this.findQuizOrFail(submission.quizId);
+		await this.assertCanViewSubmission(submission, quiz, actor);
+		const rows = await this.files.find({
+			where: { submissionId },
+			order: { createdAt: 'ASC' },
+		});
+		return {
+			submissionId,
+			submissionMode: quiz.submissionMode,
+			// FE dùng cờ này để quyết định hiện khu vực tải tệp; giữ ở server để luật "ai được ghi"
+			// chỉ có một nơi định nghĩa (`assertCanViewSubmission` + `canAttachFile`).
+			allowUpload:
+				actor.role === 'student' &&
+				submission.userId === actor.id &&
+				canAttachFile(submission.status) &&
+				needsSubmissionFile(quiz.submissionMode),
+			maxFiles: MAX_SUBMISSION_FILES,
+			items: rows.map((row) => this.toSubmissionFile(row)),
+		};
+	}
+
+	/**
+	 * Mở luồng đọc của một tệp bài nộp — phần dùng chung cho **cả hai** đường vào (Bearer và token).
+	 *
+	 * Tệp có thể đã bị xoá tay khỏi đĩa: trả `404` còn hơn để lỗi ENOENT thành `500`.
+	 */
+	private async streamFileRow(row: SubmissionFile) {
+		const stream = await this.storage
+			.openReadStream(row.storageKey)
+			.catch(() => null);
+		if (!stream) {
+			throw new NotFoundException('Tệp không còn trên máy chủ.');
+		}
+		return { stream, file: this.toSubmissionFile(row) };
+	}
+
+	/**
+	 * `GET /api/submission-files/:id/download` — tải tệp **có xác thực**.
+	 *
+	 * Vì sao không phục vụ tĩnh qua `/uploads/**` như học liệu: thư mục tĩnh không đi qua guard nào
+	 * (`main.ts` dùng `useStaticAssets`), nên ai có URL là tải được. Với bài làm cá nhân của học viên
+	 * thì đó là rò rỉ dữ liệu, nên tệp bài nộp đi qua endpoint và dùng đúng
+	 * `assertCanViewSubmission` như `GET /api/submissions/:id`.
+	 */
+	async openSubmissionFile(id: string, actor: AuthUser) {
+		const row = await this.findSubmissionFileOrFail(id);
+		const submission = await this.findSubmissionOrFail(row.submissionId);
+		const quiz = await this.findQuizOrFail(submission.quizId);
+		await this.assertCanViewSubmission(submission, quiz, actor);
+		return this.streamFileRow(row);
+	}
+
+	/**
+	 * `GET /api/submission-files/:id/view?token=…` — mở tệp để **trình duyệt tự render** (PDF/ảnh).
+	 *
+	 * Route này là `@Public()` vì `<a target="_blank">` **không gửi** header `Authorization`; bằng
+	 * chứng truy cập nằm ở token HMAC trong query (`submission-file-token.ts`). Token được cấp trong
+	 * `toSubmissionFile()` — tức chỉ sau khi người gọi đã qua `assertCanViewSubmission` — nên
+	 * `@Public()` ở đây **không** có nghĩa là không kiểm quyền.
+	 */
+	async openSubmissionFileByToken(id: string, token: string) {
+		// Kiểm token **trước** khi tra DB: token của tệp khác phải bị từ chối bằng `401`, không phải
+		// `404` — nếu tra DB trước thì kẻ dò id sẽ phân biệt được "tệp tồn tại" với "không tồn tại".
+		const secret = this.configService.get<string>('JWT_SECRET') ?? '';
+		if (!verifySubmissionFileToken(secret, id, token)) {
+			throw new UnauthorizedException(
+				'Liên kết xem tệp không hợp lệ hoặc đã hết hạn.',
+			);
+		}
+		return this.streamFileRow(await this.findSubmissionFileOrFail(id));
+	}
+	/**
+	 * `DELETE /api/submission-files/:id` — chỉ khi lượt còn đang mở.
+	 *
+	 * Vì sao giảng viên cũng không xoá được tệp đã nộp: bài nộp là bằng chứng đánh giá; sửa nó sau
+	 * khi nộp sẽ làm lệch điểm và lịch sử. Giảng viên muốn loại tệp thì dùng phản hồi/yêu cầu nộp lại.
+	 */
+	async deleteSubmissionFile(id: string, actor: AuthUser) {
+		const row = await this.findSubmissionFileOrFail(id);
+		const submission = await this.findSubmissionOrFail(row.submissionId);
+		const quiz = await this.findQuizOrFail(submission.quizId);
+		await this.assertCanViewSubmission(submission, quiz, actor);
+		if (!canAttachFile(submission.status)) {
+			throw new ConflictException('Không thể xoá tệp sau khi bài đã được nộp.');
+		}
+		await this.files.delete({ id });
+		// Best-effort: hàng DB là nguồn chân lý, tệp mồ côi chỉ tốn đĩa (cùng quy tắc với học liệu).
+		await this.storage.remove(row.storageKey);
+		return { success: true };
+	}
+
+	private toSubmissionFile(row: SubmissionFile) {
+		const secret = this.configService.get<string>('JWT_SECRET') ?? '';
+		const token = signSubmissionFileToken(secret, row.id);
+		return {
+			id: row.id,
+			submissionId: row.submissionId,
+			originalName: row.originalName,
+			mimeType: row.mimeType,
+			fileSizeBytes: row.fileSizeBytes,
+			uploadedBy: row.uploadedBy,
+			// `storageKey` **không** được trả ra: đường dẫn nội bộ trên đĩa không phải thông tin cho
+			// client, và giữ kín nó là lớp phòng thủ thứ hai ngoài kiểm tra quyền.
+			downloadUrl: `/api/submission-files/${row.id}/download`,
+			viewUrl: `/api/submission-files/${row.id}/view?token=${encodeURIComponent(token)}`,
+			canPreview: isInlineViewable(row.mimeType),
+			createdAt: row.createdAt,
+		};
+	}
+
+	private async findSubmissionFileOrFail(id: string) {
+		const row = await this.files.findOne({ where: { id } });
+		if (!row) throw new NotFoundException('Không tìm thấy tệp bài nộp.');
+		return row;
+	}
+
+	private describeAllowedSubmissionMimeTypes(): string {
+		return ALLOWED_SUBMISSION_MIME_TYPES.map(
+			(mime) => SUBMISSION_MIME_LABEL[mime] ?? mime,
+		).join(', ');
 	}
 
 	async findSubmissions(actor: AuthUser, query: SubmissionListQueryDto) {
@@ -482,6 +843,23 @@ export class ExerciseService {
 			.skip(toSkip(query.page, query.take))
 			.take(query.take)
 			.getManyAndCount();
+		// Đếm tệp bằng **một** truy vấn gộp nhóm thay vì một truy vấn cho mỗi dòng: danh sách bài nộp
+		// của giảng viên có thể tới 100 dòng (`take ≤ 100`), nhân lên thành 100 round-trip là lãng phí.
+		const fileCounts = new Map<string, number>();
+		if (items.length) {
+			const rows = await this.files
+				.createQueryBuilder('file')
+				.select('file.submissionId', 'submissionId')
+				.addSelect('COUNT(*)', 'count')
+				.where('file.submissionId IN (:...ids)', {
+					ids: items.map((item) => item.id),
+				})
+				.groupBy('file.submissionId')
+				.getRawMany<{ submissionId: string; count: string }>();
+			for (const row of rows) {
+				fileCounts.set(row.submissionId, Number(row.count));
+			}
+		}
 		return {
 			items: items.map((item) => ({
 				id: item.id,
@@ -493,9 +871,12 @@ export class ExerciseService {
 				},
 				userId: item.userId,
 				attemptNo: item.attemptNo,
+				submissionMode: item.quiz.submissionMode,
 				status: item.status,
 				score: item.score,
 				maxScore: item.maxScore,
+				fileCount: fileCounts.get(item.id) ?? 0,
+				isLate: item.isLate,
 				submittedAt: item.submittedAt,
 				hasFeedback: !!item.feedback,
 				createdAt: item.createdAt,
@@ -515,15 +896,27 @@ export class ExerciseService {
 			quiz: { id: quiz.id, title: quiz.title },
 			userId: submission.userId,
 			attemptNo: submission.attemptNo,
+			submissionMode: quiz.submissionMode,
 			status: submission.status,
+			// `score` có thể là điểm tạm của phần trắc nghiệm trong chế độ `mixed`; FE phân biệt bằng
+			// `awaitingManualGrading`.
+			awaitingManualGrading:
+				submission.status === 'submitted' && !submission.gradedAt,
 			score: submission.score,
 			maxScore: submission.maxScore,
 			correctCount: submission.correctCount,
 			totalQuestions: submission.totalQuestions,
 			durationSeconds: submission.durationSeconds,
 			submittedAt: submission.submittedAt,
+			isLate: submission.isLate,
 			teacherFeedback: submission.feedback,
 			feedbackAt: submission.feedbackAt,
+			files: (
+				await this.files.find({
+					where: { submissionId: id },
+					order: { createdAt: 'ASC' },
+				})
+			).map((row) => this.toSubmissionFile(row)),
 			createdAt: submission.createdAt,
 			updatedAt: submission.updatedAt,
 		};
@@ -536,8 +929,12 @@ export class ExerciseService {
 		if (submission.status === 'in_progress' || submission.status === 'expired')
 			throw new BadRequestException('Bài nộp chưa được chấm xong.');
 		const duePassed = quiz.dueAt !== null && new Date() >= quiz.dueAt;
+		const questionRows = await this.questionQuery(quiz.id, true);
+		// Cờ "cho xem đáp án" chỉ có nghĩa khi bài **có** câu hỏi; bài nộp tệp thuần không có đáp án
+		// nào để giấu, nên chặn ở đây sẽ làm học viên không xem được kết quả của chính mình.
 		if (
 			actor.role === 'student' &&
+			questionRows.length > 0 &&
 			(quiz.showAnswersAfter === 'never' ||
 				(quiz.showAnswersAfter === 'after_due' && !duePassed))
 		) {
@@ -548,11 +945,22 @@ export class ExerciseService {
 		const storedAnswers = await this.answers.find({
 			where: { submissionId: id },
 		});
-		const questionRows = await this.questionQuery(quiz.id, true);
 		return {
 			submissionId: id,
+			submissionMode: quiz.submissionMode,
+			status: submission.status,
 			score: submission.score,
 			maxScore: submission.maxScore,
+			awaitingManualGrading: submission.status === 'submitted',
+			teacherFeedback: submission.feedback,
+			feedbackAt: submission.feedbackAt,
+			isLate: submission.isLate,
+			files: (
+				await this.files.find({
+					where: { submissionId: id },
+					order: { createdAt: 'ASC' },
+				})
+			).map((row) => this.toSubmissionFile(row)),
 			items: questionRows.map((question) => {
 				const answer = storedAnswers.find(
 					(row) => row.questionId === question.id,
@@ -586,6 +994,14 @@ export class ExerciseService {
 			throw new BadRequestException(
 				'Không thể phản hồi lượt làm đang diễn ra.',
 			);
+		// Bài nộp tệp không có điểm tự động, nên "chốt bài" mà không nhập điểm sẽ để lại một bài
+		// `graded` với `score = NULL` — analytics đọc thành 0 và học viên thấy "đã chấm" mà không có
+		// điểm. Chặn thẳng ở đây rẻ hơn nhiều so với việc đi dọn dữ liệu sai về sau.
+		if (dto.score === undefined && submission.score === null) {
+			throw new BadRequestException(
+				'Vui lòng nhập điểm trước khi chốt bài nộp.',
+			);
+		}
 		if (dto.score !== undefined) {
 			if (submission.maxScore === null || dto.score > submission.maxScore)
 				throw new BadRequestException(
@@ -640,7 +1056,17 @@ export class ExerciseService {
 				quiz.timeLimitSeconds == null ? null : quiz.timeLimitSeconds / 60,
 			maxAttempts: quiz.maxAttempts,
 			questionCount,
-			totalPoints: Number(points?.total ?? 0),
+			submissionMode: quiz.submissionMode,
+			// Điểm tối đa của **phần nộp tệp** (`NULL` = dùng mặc định 10); FE hiển thị và validate ô
+			// nhập điểm bằng con số này thay vì tự đoán.
+			fileMaxScore: quiz.maxScore,
+			// Tổng điểm tối đa phụ thuộc chế độ: bài nộp tệp không có câu hỏi nên nếu chỉ lấy tổng
+			// điểm câu hỏi thì `totalPoints` bằng 0 và màn hình giảng viên hiện "0 điểm".
+			totalPoints: totalMaxScore(
+				quiz.submissionMode,
+				quiz.maxScore,
+				Number(points?.total ?? 0),
+			),
 			passScore: quiz.passScore,
 			shuffleQuestions: quiz.shuffleQuestions,
 			openAt: quiz.availableFrom,
@@ -676,14 +1102,24 @@ export class ExerciseService {
 		const stored = includeAnswers
 			? await this.answers.find({ where: { submissionId: submission.id } })
 			: [];
+		// Tệp luôn kèm theo lượt làm (không phụ thuộc `includeAnswers`): học viên làm lại/mở lại trang
+		// phải thấy đúng những tệp đã tải lên, nếu không họ sẽ tải trùng và vượt trần số tệp.
+		const storedFiles = await this.files.find({
+			where: { submissionId: submission.id },
+			order: { createdAt: 'ASC' },
+		});
 		const result = {
 			id: submission.id,
 			quizId: quiz.id,
 			userId: submission.userId,
 			attemptNo: submission.attemptNo,
+			submissionMode: quiz.submissionMode,
+			fileMaxScore: quiz.maxScore,
+			maxFiles: MAX_SUBMISSION_FILES,
 			status: submission.status,
 			startedAt: submission.startedAt,
 			expiresAt: this.expiresAt(submission, quiz),
+			files: storedFiles.map((row) => this.toSubmissionFile(row)),
 			questions: questions.map((question) => ({
 				id: question.id,
 				content: question.content,
@@ -828,10 +1264,13 @@ export class ExerciseService {
 		if (!enrollment)
 			throw new ForbiddenException('Bạn chưa ghi danh khoá học này.');
 		const now = new Date();
+		// `file`/`mixed` vẫn mở sau hạn nộp: bài nộp muộn được ghi `is_late = true` thay vì chặn
+		// cứng, nếu không học viên mất luôn cơ hội nộp và giảng viên không thấy được ai nộp muộn.
+		const closed = quiz.dueAt ? now > quiz.dueAt : false;
 		if (
 			checkWindow &&
 			((quiz.availableFrom && now < quiz.availableFrom) ||
-				(quiz.dueAt && now > quiz.dueAt))
+				(closed && !allowsLateSubmission(quiz.submissionMode)))
 		) {
 			throw new BadRequestException('Bài kiểm tra chưa mở hoặc đã đóng.');
 		}

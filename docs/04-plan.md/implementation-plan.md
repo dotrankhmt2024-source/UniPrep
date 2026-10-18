@@ -434,8 +434,41 @@ user story Student ("take practice quizzes"); Instructor ("build multiple-choice
 | E5-T8 | Frontend: giảng viên — ngân hàng câu hỏi + tạo đề | P1 | 4,0 | E5-T1, E3-T9 | frontend | | Tạo được đề ≥ 10 câu qua UI; sửa/xoá câu hỏi có xác nhận; đề lưu vào DB đúng cấu trúc |
 | E5-T9 | Test: chấm điểm biên (0 điểm, điểm tối đa, hết giờ, nộp trùng, câu bỏ trống) | P0 | 2,0 | E5-T2 | backend | | ≥ 6 test case, trong đó có 1 case khẳng định nộp trùng không tạo submission thứ hai cho cùng `attempt_no` |
 
+**Bổ sung E5 (2026-10-16) — bài tập nộp tệp (yêu cầu 4.4 "bài trắc nghiệm và/hoặc bài tập nộp tệp"):**
+
+| Task ID | Tên | Ưu tiên | Est. | Phụ thuộc | Nhãn | Người nhận | DoD (kiểm chứng được) |
+|---|---|---|---|---|---|---|---|
+| E5-T10 | `submission_files` + `quizzes.submission_mode`/`max_score` + migration; API tệp bài nộp (upload/list/delete/download **có xác thực**) | P0 | 2,5 | E5-T2 | backend | ✅ | Tệp `.exe` → `415`; quá dung lượng → `413`; quá 5 tệp → `400`; học viên khác tải tệp → `403`; `up → revert → up` + `schema:log` rỗng |
+| E5-T11 | Rẽ nhánh chấm theo `submission_mode`: `file`/`mixed` → `submitted` (chờ chấm), chỉ trắc nghiệm mới tự chấm; cho nộp muộn với `is_late` | P0 | 2,0 | E5-T10 | backend | ✅ | Nộp không có tệp → `400`; `file` xong có `score = null`, `autoGraded = false`; `mixed` có điểm tạm phần trắc nghiệm; giảng viên chốt điểm không được bỏ trống điểm |
+| E5-T12 | Frontend: học viên nộp tệp + xem kết quả và **lịch sử làm bài**; giảng viên xem/tải tệp, chấm điểm, phản hồi; chọn hình thức nộp khi tạo bài tập | P0 | 3,0 | E5-T10, E5-T11 | frontend | ✅ | Tải tệp bằng axios + blob (endpoint cần token, không dùng `<a href>`); lịch sử chỉ hiện bài của chính mình; nút "Nộp bài" khoá khi chưa có tệp |
+| E5-T13 | Test: luồng nộp tệp e2e + IDOR tệp + luật thuần (`submission-file.rules`) | P0 | 2,0 | E5-T11 | backend | ✅ | 11 unit test cho luật + 3 e2e (nộp muộn → chờ chấm → chấm → xem lại; `mixed`; whitelist/trần tệp) |
+| E5-T14 | Xem tệp bài nộp **inline trong trình duyệt** (giảng viên + học viên): route `@Public()` + token HMAC ngắn hạn; siết static assets chỉ còn `uploads/lessons/` | P1 | 1,5 | E5-T10 | backend + frontend | ✅ | 6 unit test token; e2e: `?token=` → `200` + `Content-Disposition: inline`, thiếu token → `401`, token của tệp khác → `401`; `GET /uploads/submissions/…` → `404` |
+
+> **Sửa lỗi phát hiện trong lúc làm E5-T12 (2026-10-16):** tên tệp tiếng Việt bị mojibake
+> (`Báo cáo.pdf` → `BÃ¡o cÃ¡o.pdf`) vì busboy đọc tham số `filename` theo latin1. Đã thêm
+> `decodeUploadFileName` dùng chung cho **cả** học liệu (`LessonService`) và bài nộp (`ExerciseService`),
+> kèm 5 unit test.
+>
+> **Sửa lỗi phát hiện khi kiểm chứng thủ công (2026-10-16):** giảng viên **không chấm được bài đã quá
+> hạn**. Nguyên nhân: `statusOf(quiz)` trả `closed` khi `dueAt` đã qua, nhưng `teacher/quiz-manager` chỉ
+> hiện khu "Bài nộp & phản hồi" khi `status === 'published'` — đúng lúc quá hạn (nhiều bài chờ chấm
+> nhất, kể cả bài nộp muộn vốn được phép ở chế độ nộp tệp) thì màn hình chấm biến mất. Đã chuyển các
+> điều kiện sang `draft` ↔ `không phải draft`, cho `handlePublish` dùng `status` do server trả về thay
+> vì hard-code `'published'`, và badge danh sách hiện rõ "Đã công bố · quá hạn". Kèm sửa cận dưới
+> `maxScore` của DTO thành `> 0` (trước là `≥ 0`) để khớp CHECK `chk_quizzes_max_score` — nhận `0` sẽ
+> biến lỗi nhập liệu thành `500` thay vì `400`.
+>
+> **Sửa lỗi điều hướng (2026-10-16):** giảng viên bị dẫn vào **trang làm bài của học viên** (`/quizzes/:id`)
+> vì nút "Bắt đầu" ở `/courses/:courseId/quizzes` hiện cho mọi vai trò. Ở đó không có ô chấm điểm, nút
+> "Bắt đầu làm bài" luôn `403`, và khối "Lịch sử làm bài" hiển thị bài nộp **của học viên khác** như thể
+> là lịch sử của chính giảng viên. Đã sửa: `/quizzes/:id` phát hiện người không phải `student` và chỉ
+> hiện lời chỉ dẫn + nút "Đi tới khu chấm điểm"; `/courses/:courseId/quizzes` đổi hành động theo vai trò
+> (giảng viên/admin thấy "Chấm bài & quản lý" → `/teacher/courses/:courseId/quizzes`), và trạng thái
+> `closed` không còn bị ghi nhầm là "Chưa mở cho học viên".
+
 **DoD cấp epic E5:** một học viên làm bài → điểm hiển thị → xem lại lỗi; dữ liệu điểm dùng được cho
-feature store ở E8-T3.
+feature store ở E8-T3. **Với bài tập nộp tệp:** học viên nộp tệp → bài ở trạng thái "chờ chấm" → giảng
+viên tải tệp, cho điểm và phản hồi → học viên thấy điểm và phản hồi trong lịch sử làm bài.
 
 ---
 
