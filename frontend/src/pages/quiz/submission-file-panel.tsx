@@ -136,6 +136,16 @@ const SubmissionFilePanel = ({
 								</span>
 							</span>
 							<span className="flex shrink-0 items-center gap-space-xs">
+								{file.canPreview && (
+									<Button
+										size="small"
+										href={file.viewUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										Xem
+									</Button>
+								)}
 								<Button
 									size="small"
 									loading={busyFileId === file.id}

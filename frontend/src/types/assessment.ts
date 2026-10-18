@@ -24,6 +24,8 @@ export interface SubmissionFile {
 	uploadedBy: string | null;
 	downloadUrl: string;
 	createdAt: string;
+	viewUrl: string;
+	canPreview: boolean;
 }
 
 export interface SubmissionFilesResponse {

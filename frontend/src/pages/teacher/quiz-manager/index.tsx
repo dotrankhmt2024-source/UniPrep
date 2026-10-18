@@ -686,14 +686,26 @@ const TeacherQuizManagerPage = () => {
 																				{formatFileSize(file.fileSizeBytes)}
 																			</span>
 																		</span>
-																		<Button
-																			size="small"
-																			onClick={() =>
-																				void handleDownloadFile(file)
-																			}
-																		>
-																			Tải xuống
-																		</Button>
+																		<span className="flex shrink-0 items-center gap-space-xs">
+																			{file.canPreview && (
+																				<Button
+																					size="small"
+																					href={file.viewUrl}
+																					target="_blank"
+																					rel="noopener noreferrer"
+																				>
+																					Xem
+																				</Button>
+																			)}
+																			<Button
+																				size="small"
+																				onClick={() =>
+																					void handleDownloadFile(file)
+																				}
+																			>
+																				Tải xuống
+																			</Button>
+																		</span>
 																	</li>
 																))}
 															</ul>
