@@ -197,7 +197,37 @@ describe('Submission file flow (e2e)', () => {
 			'filename*=UTF-8',
 		);
 		expect(download.headers['x-content-type-options']).toBe('nosniff');
+		// --- Xem inline bằng token (route @Public) ---
+		const fileItems = responseData<{
+			allowUpload: boolean;
+			items: Array<{ id: string; viewUrl: string; canPreview: boolean }>;
+		}>(teacherFiles.body).items;
+		expect(fileItems[0].canPreview).toBe(true);
+		expect(fileItems[0].viewUrl).toContain('?token=');
 
+		const token =
+			new URL(fileItems[0].viewUrl, 'http://localhost:3000').searchParams.get(
+				'token',
+			) ?? '';
+
+		// 1) có token → 200 + inline
+		const inlineView = await apiRequest()
+			.get(`/api/submission-files/${file.id}/view`)
+			.query({ token })
+			.expect(200);
+		expect(inlineView.headers['content-disposition']).toContain('inline');
+		expect(inlineView.headers['x-content-type-options']).toBe('nosniff');
+
+		// 2) không token → 401
+		await apiRequest().get(`/api/submission-files/${file.id}/view`).expect(401);
+
+		// 3) token của tệp A gọi cho tệp B → 401
+		// Dùng một UUID v4 hợp lệ nhưng KHÔNG tồn tại: token bị từ chối trước khi tra DB.
+		const otherFileId = '00000000-0000-4000-8000-000000000000';
+		await apiRequest()
+			.get(`/api/submission-files/${otherFileId}/view`)
+			.query({ token })
+			.expect(401);
 		// Chốt bài mà không nhập điểm là lỗi nghiệp vụ, không phải một bài `graded` với điểm rỗng.
 		await apiRequest()
 			.patch(`/api/submissions/${attempt.id}/feedback`)
@@ -350,6 +380,32 @@ describe('Submission file flow (e2e)', () => {
 				contentType: 'text/plain',
 			})
 			.expect(400);
+	});
+
+	/**
+	 * Chặn tái phát: `maxScore = 0` từng lọt qua DTO (`@Min(0)`) rồi đâm vào CHECK
+	 * `chk_quizzes_max_score` (`max_score > 0`) của Postgres ⇒ `500` kèm message SQL tiếng Anh lộ tên
+	 * bảng/constraint. Đúng phải là `400` ở tầng validate, trước khi chạm DB.
+	 */
+	it('rejects a zero max score as a validation error, not a database error', async () => {
+		const response = await apiRequest()
+			.post('/api/quizzes')
+			.set('Authorization', `Bearer ${teacherToken}`)
+			.send({
+				courseId,
+				title: 'E5F zero max score',
+				submissionMode: 'file',
+				maxScore: 0,
+			})
+			.expect(400);
+
+		// Message phải là câu tiếng Việt của validator, không phải lỗi SQL.
+		expect(JSON.stringify(response.body)).toContain(
+			'Điểm tối đa phần nộp tệp phải lớn hơn 0',
+		);
+		expect(JSON.stringify(response.body)).not.toContain(
+			'chk_quizzes_max_score',
+		);
 	});
 
 	async function register(

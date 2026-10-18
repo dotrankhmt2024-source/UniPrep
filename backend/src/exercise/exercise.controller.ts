@@ -19,6 +19,7 @@ import {
 	ApiOkResponse,
 	ApiOperation,
 	ApiProduces,
+	ApiQuery,
 	ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -27,7 +28,10 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { ApiResponseDto } from '../common/dto/api-response.dto';
 import { UUID_V4_PIPE } from '../common/pipes/uuid-param.pipe';
-import { buildContentDisposition } from './submission-file.rules';
+import {
+	buildContentDisposition,
+	isInlineViewable,
+} from './submission-file.rules';
 import type { AuthUser } from '../auth/types/authenticated-user.type';
 import {
 	CreateQuestionDto,
@@ -40,6 +44,7 @@ import {
 	UpdateQuizDto,
 } from './dto/assessment.dto';
 import { ExerciseService, type SubmissionUploadFile } from './exercise.service';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Exercise')
 @Controller()
@@ -234,6 +239,54 @@ export class ExerciseController {
 		// `X-Content-Type-Options: nosniff` chặn trình duyệt tự "đoán" lại định dạng: nếu không, một
 		// tệp `.txt` chứa HTML có thể được render như trang web cùng origin với API.
 		response.setHeader('X-Content-Type-Options', 'nosniff');
+		stream.pipe(response);
+	}
+	/**
+	 * `GET /api/submission-files/:id/view?token=…` — mở tệp để **trình duyệt tự render** (PDF/ảnh).
+	 *
+	 * `@Public()` là **bắt buộc**: khi mở bằng `<a target="_blank">`, trình duyệt không gửi header
+	 * `Authorization`, nên bằng chứng truy cập phải nằm trong query — token HMAC ngắn hạn, scope theo
+	 * đúng `fileId`, do `toSubmissionFile()` cấp sau khi người gọi đã qua `assertCanViewSubmission`.
+	 * Route `@Public()` **không** có nghĩa là không kiểm quyền: việc kiểm nằm trong service.
+	 *
+	 * `Content-Disposition` là `inline` cho MIME render được và `attachment` cho phần còn lại
+	 * (`isInlineViewable`) — nhờ vậy `.zip`/`.docx` vẫn tải về thay vì mở ra trang trắng.
+	 */
+	@Get('submission-files/:id/view')
+	@Public()
+	@ApiOperation({
+		summary: 'Xem tệp bài nộp inline (bằng chứng là token trong URL)',
+	})
+	// Route không dùng Bearer mà dùng `?token=`; khai báo để Swagger UI hiện ô nhập token, nếu không
+	// người đọc tài liệu sẽ thấy một endpoint "công khai không tham số" và luôn nhận 401.
+	@ApiQuery({
+		name: 'token',
+		required: true,
+		description:
+			'Token HMAC ngắn hạn lấy từ trường `viewUrl` của response danh sách tệp bài nộp.',
+	})
+	async viewSubmissionFile(
+		@Param('id', UUID_V4_PIPE) id: string,
+		@Query('token') token: string | undefined,
+		@Res() response: Response,
+	): Promise<void> {
+		const { stream, file } =
+			await this.exerciseService.openSubmissionFileByToken(id, token ?? '');
+		response.setHeader('Content-Type', file.mimeType);
+		response.setHeader('Content-Length', file.fileSizeBytes);
+		response.setHeader(
+			'Content-Disposition',
+			buildContentDisposition(
+				file.originalName,
+				isInlineViewable(file.mimeType) ? 'inline' : 'attachment',
+			),
+		);
+		// `nosniff` phải giữ cả ở chế độ `inline`: không có nó, một tệp `.txt` chứa HTML có thể được
+		// render như trang web cùng origin với API. `no-store` vì đây là tệp cá nhân, và
+		// `no-referrer` để token trong URL không bị gửi tiếp khi người dùng điều hướng khỏi tab tệp.
+		response.setHeader('X-Content-Type-Options', 'nosniff');
+		response.setHeader('Cache-Control', 'private, no-store');
+		response.setHeader('Referrer-Policy', 'no-referrer');
 		stream.pipe(response);
 	}
 

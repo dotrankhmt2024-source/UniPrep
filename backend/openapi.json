@@ -3155,6 +3155,35 @@
 				"tags": ["Exercise"]
 			}
 		},
+		"/api/submission-files/{id}/view": {
+			"get": {
+				"operationId": "ExerciseController_viewSubmissionFile",
+				"parameters": [
+					{
+						"name": "id",
+						"required": true,
+						"in": "path",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "token",
+						"required": true,
+						"in": "query",
+						"description": "Token HMAC ngắn hạn lấy từ trường `viewUrl` của response danh sách tệp bài nộp.",
+						"schema": {}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"summary": "Xem tệp bài nộp inline (bằng chứng là token trong URL)",
+				"tags": ["Exercise"]
+			}
+		},
 		"/api/submissions/{id}": {
 			"get": {
 				"operationId": "ExerciseController_getSubmission",

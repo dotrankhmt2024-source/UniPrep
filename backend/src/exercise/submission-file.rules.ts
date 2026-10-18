@@ -71,14 +71,40 @@ export const totalMaxScore = (
 	Math.round((questionPoints + fileMaxScore(mode, maxScore)) * 100) / 100;
 
 /**
- * `Content-Disposition` cho tệp tải xuống.
+ * `Content-Disposition` cho tệp bài nộp.
  *
  * Tên tệp tiếng Việt có dấu không đi được trong `filename=` (header chỉ nhận ASCII), nên phải
  * gửi kèm dạng `filename*=UTF-8''…` theo RFC 5987 — nếu chỉ có bản ASCII thì trình duyệt lưu
  * tệp với tên đã bị thay dấu.
+ *
+ * `disposition` mặc định `attachment` để mọi lời gọi cũ giữ nguyên hành vi tải xuống; route xem
+ * inline truyền `'inline'` để trình duyệt tự render (PDF/ảnh).
  */
-export const buildContentDisposition = (fileName: string): string => {
+export const buildContentDisposition = (
+	fileName: string,
+	disposition: 'inline' | 'attachment' = 'attachment',
+): string => {
 	const asciiFallback =
 		fileName.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_') || 'download';
-	return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
+	return `${disposition}; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
 };
+
+/**
+ * MIME mà trình duyệt hiển thị được trực tiếp ⇒ dùng `Content-Disposition: inline`.
+ *
+ * **Một nguồn chân lý duy nhất:** controller dùng hàm này để chọn `inline`/`attachment`, service
+ * dùng nó để tính `canPreview` cho FE — nhờ vậy FE không bao giờ hiện nút "Xem" cho một tệp mà
+ * server sẽ bắt tải (`.zip`, `.docx`…). Danh sách **không** có `text/html`: dù đã có `nosniff`,
+ * không có lý do gì để render HTML từ tệp người dùng tải lên.
+ */
+const INLINE_VIEWABLE_MIME_TYPES = new Set([
+	'application/pdf',
+	'image/png',
+	'image/jpeg',
+	'text/plain',
+	'text/csv',
+	'application/json',
+]);
+
+export const isInlineViewable = (mimeType: string): boolean =>
+	INLINE_VIEWABLE_MIME_TYPES.has(mimeType);

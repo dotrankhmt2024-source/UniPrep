@@ -46,11 +46,19 @@ async function bootstrap() {
 	const configService = app.get(ConfigService);
 
 	/**
-	 * Học liệu tải lên được phục vụ tĩnh tại `/uploads/**` (E3-T4).
+	 * Học liệu tải lên được phục vụ tĩnh tại `/uploads/lessons/**` (E3-T4).
 	 *
 	 * Vì sao **không** để dưới `/api`: đây là tệp, không phải endpoint nghiệp vụ — không đi qua
 	 * `ValidationPipe`/interceptor envelope, và URL trả về cho FE (`fileUrl`) phải mở trực tiếp
 	 * được trong thẻ `<video>`/`<img>`. `setGlobalPrefix('api')` không áp cho static assets.
+	 *
+	 * **Vì sao chỉ mount thư mục `lessons/`, không mount cả `UPLOAD_DIR`:** từ E5, `UPLOAD_DIR` còn
+	 * chứa `submissions/<submissionId>/` — bài làm cá nhân của học viên. `useStaticAssets` **không**
+	 * đi qua guard nào, nên mount cả thư mục sẽ khiến `GET /uploads/submissions/…` trả tệp cho bất kỳ
+	 * ai biết đường dẫn, vô hiệu hoá toàn bộ việc kiểm quyền ở
+	 * `GET /api/submission-files/:id/{download,view}`. Đường dẫn học liệu **không đổi**: `storageKey`
+	 * của học liệu luôn bắt đầu bằng `lessons/`, nên URL đã lưu trong `lesson_materials.url` vẫn mở
+	 * được. Thêm loại tệp công khai mới thì phải mount thêm ở đây một cách có chủ đích.
 	 *
 	 * Cảnh báo vận hành: thư mục này **không** được commit (`backend/.gitignore` có `/uploads`).
 	 * Trên môi trường nhiều máy, đĩa cục bộ không chia sẻ được — đó là câu hỏi mở số 3 của
@@ -58,7 +66,9 @@ async function bootstrap() {
 	 * bằng `UPLOAD_DIR`.
 	 */
 	const uploadDir = configService.get<string>('UPLOAD_DIR') ?? './uploads';
-	app.useStaticAssets(resolve(uploadDir), { prefix: '/uploads/' });
+	app.useStaticAssets(resolve(uploadDir, 'lessons'), {
+		prefix: '/uploads/lessons/',
+	});
 
 	const rawOrigins = configService.get<string>('CORS_ORIGINS', '');
 	const originList = rawOrigins

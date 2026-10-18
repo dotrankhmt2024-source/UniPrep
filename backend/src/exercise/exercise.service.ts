@@ -7,7 +7,9 @@ import {
 	NotFoundException,
 	PayloadTooLargeException,
 	UnsupportedMediaTypeException,
+	UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 import type { AuthUser } from '../auth/types/authenticated-user.type';
@@ -52,8 +54,12 @@ import {
 	requiresQuestions,
 	submissionStatusAfterSubmit,
 	totalMaxScore,
+	isInlineViewable,
 } from './submission-file.rules';
-
+import {
+	signSubmissionFileToken,
+	verifySubmissionFileToken,
+} from './submission-file-token';
 type QuestionWithOptions = QuizQuestion & { options: QuizOption[] };
 
 /**
@@ -91,6 +97,7 @@ export class ExerciseService {
 		@InjectRepository(SubmissionFile)
 		private readonly files: Repository<SubmissionFile>,
 		private readonly courseAccess: CourseAccessService,
+		private readonly configService: ConfigService, // Dòng mới thêm
 		private readonly storage: StorageService,
 		private readonly dataSource: DataSource,
 	) {}
@@ -699,6 +706,21 @@ export class ExerciseService {
 	}
 
 	/**
+	 * Mở luồng đọc của một tệp bài nộp — phần dùng chung cho **cả hai** đường vào (Bearer và token).
+	 *
+	 * Tệp có thể đã bị xoá tay khỏi đĩa: trả `404` còn hơn để lỗi ENOENT thành `500`.
+	 */
+	private async streamFileRow(row: SubmissionFile) {
+		const stream = await this.storage
+			.openReadStream(row.storageKey)
+			.catch(() => null);
+		if (!stream) {
+			throw new NotFoundException('Tệp không còn trên máy chủ.');
+		}
+		return { stream, file: this.toSubmissionFile(row) };
+	}
+
+	/**
 	 * `GET /api/submission-files/:id/download` — tải tệp **có xác thực**.
 	 *
 	 * Vì sao không phục vụ tĩnh qua `/uploads/**` như học liệu: thư mục tĩnh không đi qua guard nào
@@ -711,16 +733,28 @@ export class ExerciseService {
 		const submission = await this.findSubmissionOrFail(row.submissionId);
 		const quiz = await this.findQuizOrFail(submission.quizId);
 		await this.assertCanViewSubmission(submission, quiz, actor);
-		// Tệp có thể đã bị xoá tay khỏi đĩa: trả `404` còn hơn để lỗi ENOENT thành `500`.
-		const stream = await this.storage
-			.openReadStream(row.storageKey)
-			.catch(() => null);
-		if (!stream) {
-			throw new NotFoundException('Tệp không còn trên máy chủ.');
-		}
-		return { stream, file: this.toSubmissionFile(row) };
+		return this.streamFileRow(row);
 	}
 
+	/**
+	 * `GET /api/submission-files/:id/view?token=…` — mở tệp để **trình duyệt tự render** (PDF/ảnh).
+	 *
+	 * Route này là `@Public()` vì `<a target="_blank">` **không gửi** header `Authorization`; bằng
+	 * chứng truy cập nằm ở token HMAC trong query (`submission-file-token.ts`). Token được cấp trong
+	 * `toSubmissionFile()` — tức chỉ sau khi người gọi đã qua `assertCanViewSubmission` — nên
+	 * `@Public()` ở đây **không** có nghĩa là không kiểm quyền.
+	 */
+	async openSubmissionFileByToken(id: string, token: string) {
+		// Kiểm token **trước** khi tra DB: token của tệp khác phải bị từ chối bằng `401`, không phải
+		// `404` — nếu tra DB trước thì kẻ dò id sẽ phân biệt được "tệp tồn tại" với "không tồn tại".
+		const secret = this.configService.get<string>('JWT_SECRET') ?? '';
+		if (!verifySubmissionFileToken(secret, id, token)) {
+			throw new UnauthorizedException(
+				'Liên kết xem tệp không hợp lệ hoặc đã hết hạn.',
+			);
+		}
+		return this.streamFileRow(await this.findSubmissionFileOrFail(id));
+	}
 	/**
 	 * `DELETE /api/submission-files/:id` — chỉ khi lượt còn đang mở.
 	 *
@@ -742,6 +776,8 @@ export class ExerciseService {
 	}
 
 	private toSubmissionFile(row: SubmissionFile) {
+		const secret = this.configService.get<string>('JWT_SECRET') ?? '';
+		const token = signSubmissionFileToken(secret, row.id);
 		return {
 			id: row.id,
 			submissionId: row.submissionId,
@@ -752,6 +788,8 @@ export class ExerciseService {
 			// `storageKey` **không** được trả ra: đường dẫn nội bộ trên đĩa không phải thông tin cho
 			// client, và giữ kín nó là lớp phòng thủ thứ hai ngoài kiểm tra quyền.
 			downloadUrl: `/api/submission-files/${row.id}/download`,
+			viewUrl: `/api/submission-files/${row.id}/view?token=${encodeURIComponent(token)}`,
+			canPreview: isInlineViewable(row.mimeType),
 			createdAt: row.createdAt,
 		};
 	}
