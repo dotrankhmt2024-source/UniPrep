@@ -1,3 +1,5 @@
+import { InterventionModule } from './intervention/intervention.module';
+import { NotificationModule } from './notification/notification.module';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -13,6 +15,7 @@ import { StorageModule } from './storage/storage.module';
 import { ExerciseModule } from './exercise/exercise.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+
 
 @Module({
 	imports: [
@@ -51,6 +54,8 @@ import { RolesGuard } from './common/guards/roles.guard';
 		StorageModule,
 		ExerciseModule,
 		HealthModule,
+		NotificationModule,
+		InterventionModule,
 	],
 	controllers: [AppController],
 	providers: [

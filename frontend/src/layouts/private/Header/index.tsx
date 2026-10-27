@@ -1,8 +1,12 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	Badge as AntBadge,
+	Button,
 	Dropdown,
+	Empty,
 	Input,
+	Popover,
+	Spin,
 	message,
 	type MenuProps,
 } from 'antd';
@@ -11,7 +15,16 @@ import { Link, useNavigate } from 'react-router';
 import { IconBtn, IOutLinedBtn } from '@/components';
 import Icon from '@/components/Icon';
 import { useAuth } from '@/contexts/auth-context';
-import { USER_ROLE_LABEL, USER_STATUS_LABEL } from '@/types';
+import {
+	getMyNotifications,
+	markAllNotificationsAsRead,
+	markNotificationAsRead,
+} from '@/apis';
+import {
+	USER_ROLE_LABEL,
+	USER_STATUS_LABEL,
+	type NotificationItem,
+} from '@/types';
 
 /**
  * Thanh trên cùng của layout private: thương hiệu, tìm kiếm toàn cục và cụm người dùng / thông báo.
@@ -43,6 +56,68 @@ const Header = ({
 }: HeaderProps) => {
 	const navigate = useNavigate();
 	const { user, logout } = useAuth();
+	const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+	const [unreadCount, setUnreadCount] = useState<number>(0);
+	const [loadingNotifications, setLoadingNotifications] = useState(false);
+	const [popoverOpen, setPopoverOpen] = useState(false);
+
+	const fetchNotifications = useCallback(async () => {
+		if (!user) return;
+		setLoadingNotifications(true);
+		try {
+			const res = await getMyNotifications();
+			if (res.data) {
+				setNotifications(res.data.items ?? []);
+				setUnreadCount(res.data.unreadCount ?? 0);
+			}
+		} catch {
+			// Bỏ qua lỗi ngầm trên header để không làm phiền người dùng
+		} finally {
+			setLoadingNotifications(false);
+		}
+	}, [user]);
+
+	useEffect(() => {
+		void fetchNotifications();
+	}, [fetchNotifications]);
+
+	const handleOpenNotifications = (open: boolean) => {
+		setPopoverOpen(open);
+		if (open) {
+			void fetchNotifications();
+		}
+	};
+
+	const handleClickNotification = async (item: NotificationItem) => {
+		if (!item.isRead) {
+			try {
+				await markNotificationAsRead(item.id);
+				setNotifications((prev) =>
+					prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n)),
+				);
+				setUnreadCount((prev) => Math.max(0, prev - 1));
+			} catch {
+				// ignore
+			}
+		}
+
+		const courseId = item.payload?.courseId;
+		if (typeof courseId === 'string' && courseId) {
+			setPopoverOpen(false);
+			navigate(`/courses/${courseId}`);
+		}
+	};
+
+	const handleMarkAllRead = async () => {
+		try {
+			await markAllNotificationsAsRead();
+			setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+			setUnreadCount(0);
+			message.success('Đã đánh dấu đọc tất cả thông báo');
+		} catch {
+			message.error('Không thể đánh dấu đã đọc');
+		}
+	};
 
 	const handleLogout = async () => {
 		// `logout()` đã gửi refresh token lên API và xoá phiên khỏi store + localStorage.
@@ -119,9 +194,74 @@ const Header = ({
 					</div>
 				)}
 
-				<AntBadge dot color="#ba1a1a" offset={[-4, 4]}>
-					<IconBtn icon={<Icon name="notifications" />} title="Thông báo" />
-				</AntBadge>
+				<Popover
+					trigger="click"
+					placement="bottomRight"
+					open={popoverOpen}
+					onOpenChange={handleOpenNotifications}
+					content={
+						<div className="w-80 sm:w-96">
+							<div className="mb-2 flex items-center justify-between border-b border-outline-variant/40 pb-2">
+								<span className="font-title-sm font-bold text-on-surface">
+									Thông báo ({unreadCount} chưa đọc)
+								</span>
+								{unreadCount > 0 && (
+									<Button
+										type="link"
+										size="small"
+										onClick={() => void handleMarkAllRead()}
+									>
+										Đánh dấu đã đọc hết
+									</Button>
+								)}
+							</div>
+
+							{loadingNotifications ? (
+								<div className="flex justify-center py-6">
+									<Spin size="small" />
+								</div>
+							) : notifications.length === 0 ? (
+								<Empty
+									image={Empty.PRESENTED_IMAGE_SIMPLE}
+									description="Chưa có thông báo nào"
+								/>
+							) : (
+								<div className="max-h-96 space-y-2 overflow-y-auto pr-1">
+									{notifications.map((item) => (
+										<div
+											key={item.id}
+											onClick={() => void handleClickNotification(item)}
+											className={`cursor-pointer rounded-lg border p-3 transition ${
+												item.isRead
+													? 'border-outline-variant/30 bg-surface-container-lowest opacity-75'
+													: 'border-secondary/40 bg-secondary/5'
+											} hover:bg-surface-container-low`}
+										>
+											<div className="flex items-start justify-between gap-2">
+												<p className="font-label-md font-semibold text-on-surface">
+													{item.title}
+												</p>
+												{!item.isRead && (
+													<span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-error" />
+												)}
+											</div>
+											<p className="mt-1 whitespace-pre-wrap font-body-sm text-on-surface-variant">
+												{item.body}
+											</p>
+											<p className="mt-1.5 font-label-sm text-outline">
+												{new Date(item.sentAt).toLocaleString('vi-VN')}
+											</p>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					}
+				>
+					<AntBadge count={unreadCount} size="small" color="#ba1a1a" offset={[-4, 4]}>
+						<IconBtn icon={<Icon name="notifications" />} title="Thông báo" />
+					</AntBadge>
+				</Popover>
 
 				<div className="mx-1 hidden h-6 w-px bg-outline-variant sm:block" />
 
