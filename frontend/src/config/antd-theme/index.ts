@@ -92,6 +92,7 @@ export const getAntdTheme = (isDark: boolean): ThemeConfig => ({
 		Pagination: {
 			borderRadius: 10,
 			itemActiveBg: BRAND.primary,
+			itemActiveColorDisabled: '#ffffff',
 		},
 		Layout: {
 			headerBg: isDark ? '#10192b' : BRAND.surfaceLowest,

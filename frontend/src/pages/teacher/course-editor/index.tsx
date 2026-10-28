@@ -12,6 +12,7 @@ import CourseCohortsTab from './course-cohorts-tab';
 import CourseInstructorsTab from './course-instructors-tab';
 import CourseMetadataTab from './course-metadata-tab';
 import CoursePrerequisitesTab from './course-prerequisites-tab';
+import CourseInterventionTab from './course-intervention-tab';
 
 /**
  * Trang soạn thảo một khoá học của khu giảng viên (E3-T9) — route `/teacher/courses/:courseId`.
@@ -278,6 +279,11 @@ const TeacherCourseEditorPage = () => {
 							key: 'content',
 							label: 'Nội dung',
 							children: <CourseContentEditor courseId={courseId} />,
+						},
+						{
+							key: 'intervention',
+							label: 'Cảnh báo sớm (AI)',
+							children: <CourseInterventionTab courseId={courseId} />,
 						},
 					]}
 				/>

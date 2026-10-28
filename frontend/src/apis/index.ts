@@ -19,3 +19,4 @@ export * from './enrollment';
 export * from './lesson';
 export * from './material';
 export * from './user';
+export * from './intervention';
