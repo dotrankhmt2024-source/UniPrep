@@ -48,9 +48,7 @@ export class AspEvaluatorService {
 			cleanPrompt.includes('%')
 		) {
 			const percentMatch = cleanPrompt.match(/(\d+)\s*%/);
-			criteria.maxProgressPercent = percentMatch
-				? Number(percentMatch[1])
-				: 50;
+			criteria.maxProgressPercent = percentMatch ? Number(percentMatch[1]) : 50;
 			hasValidCriteria = true;
 		}
 
@@ -118,7 +116,9 @@ export class AspEvaluatorService {
 			criteria.minOverdueLessons !== undefined &&
 			context.overdueLessonsCount >= criteria.minOverdueLessons
 		) {
-			triggers.push(`Có ${context.overdueLessonsCount} bài học/nội dung quá hạn`);
+			triggers.push(
+				`Có ${context.overdueLessonsCount} bài học/nội dung quá hạn`,
+			);
 		}
 
 		// Kiểm tra số ngày không hoạt động
@@ -186,9 +186,9 @@ export class AspEvaluatorService {
 		}
 
 		// 2. Nếu trong thông báo có nêu con số % tiến độ, kiểm tra xem có khớp với dữ kiện thật không (sai số cho phép <= 5%)
-		const mentionedPercents = [...generatedContent.matchAll(/(\d+(?:\.\d+)?)\s*%/g)].map(
-			(m) => Number(m[1]),
-		);
+		const mentionedPercents = [
+			...generatedContent.matchAll(/(\d+(?:\.\d+)?)\s*%/g),
+		].map((m) => Number(m[1]));
 		for (const pct of mentionedPercents) {
 			const matchesProgress = Math.abs(pct - context.progressPercent) <= 5;
 			const matchesQuizScore =

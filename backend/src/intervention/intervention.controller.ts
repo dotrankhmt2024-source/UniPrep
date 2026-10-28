@@ -39,7 +39,7 @@ export class InterventionController {
 			actor,
 		);
 		return buildSuccess(data);
-    }
+	}
 	@Get('course/:courseId')
 	@Roles('teacher', 'admin')
 	@ApiBearerAuth()

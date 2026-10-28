@@ -26,9 +26,7 @@ export class NotificationController {
 	@ApiOkResponse({ type: ApiResponseDto })
 	async findMyNotifications(
 		@CurrentUser() actor: AuthUser,
-	): Promise<
-		ApiResponseDto<{ items: Notification[]; unreadCount: number }>
-	> {
+	): Promise<ApiResponseDto<{ items: Notification[]; unreadCount: number }>> {
 		const data = await this.notificationService.findMyNotifications(actor.id);
 		return buildSuccess(data);
 	}

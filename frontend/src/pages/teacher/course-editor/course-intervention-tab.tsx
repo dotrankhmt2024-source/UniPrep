@@ -8,7 +8,6 @@ import {
 	Modal,
 	Row,
 	Select,
-	Space,
 	Statistic,
 	Table,
 	Tag,
@@ -39,7 +38,6 @@ const { Title, Paragraph, Text } = Typography;
 export const CourseInterventionTab = ({
 	courseId,
 }: CourseInterventionTabProps) => {
-	const [form] = Form.useForm();
 	const [cohorts, setCohorts] = useState<CohortItem[]>([]);
 	const [loadingCohorts, setLoadingCohorts] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
@@ -73,7 +71,9 @@ export const CourseInterventionTab = ({
 					setHistory(historyRes.data.items ?? []);
 				}
 			} catch (error) {
-				message.error(getApiErrorMessage(error, 'Không thể tải dữ liệu ban đầu.'));
+				message.error(
+					getApiErrorMessage(error, 'Không thể tải dữ liệu ban đầu.'),
+				);
 			} finally {
 				setLoadingCohorts(false);
 				setLoadingHistory(false);
@@ -140,9 +140,16 @@ export const CourseInterventionTab = ({
 
 	return (
 		<div className="space-y-space-lg">
-			<Card title="Chạy hệ thống Cảnh báo sớm & Can thiệp AI (MCP + ASP + LLM)" bordered={false} className="shadow-sm">
+			<Card
+				title="Chạy hệ thống Cảnh báo sớm & Can thiệp AI (MCP + ASP + LLM)"
+				bordered={false}
+				className="shadow-sm"
+			>
 				<Paragraph className="text-on-surface-variant">
-					Nhập yêu cầu bằng ngôn ngữ tự nhiên (prompt). Hệ thống sẽ tự động tổng hợp dữ liệu hành vi học tập (MCP), đánh giá điều kiện (ASP), soạn thảo cá nhân hoá (LLM) và kiểm chứng chống ảo giác trước khi gửi thông báo tới học viên.
+					Nhập yêu cầu bằng ngôn ngữ tự nhiên (prompt). Hệ thống sẽ tự động tổng
+					hợp dữ liệu hành vi học tập (MCP), đánh giá điều kiện (ASP), soạn thảo
+					cá nhân hoá (LLM) và kiểm chứng chống ảo giác trước khi gửi thông báo
+					tới học viên.
 				</Paragraph>
 
 				<Form
@@ -151,13 +158,16 @@ export const CourseInterventionTab = ({
 					initialValues={{
 						channel: 'in_app',
 						dryRun: false,
-						prompt: 'Kiểm tra các học viên có tiến độ dưới 50% hoặc trễ hạn bài học để gửi nhắc nhở ôn tập.',
+						prompt:
+							'Kiểm tra các học viên có tiến độ dưới 50% hoặc trễ hạn bài học để gửi nhắc nhở ôn tập.',
 					}}
 				>
 					<Form.Item
 						name="prompt"
 						label="Yêu cầu kiểm tra & cảnh báo (Prompt)"
-						rules={[{ required: true, message: 'Vui lòng nhập prompt cho AI!' }]}
+						rules={[
+							{ required: true, message: 'Vui lòng nhập prompt cho AI!' },
+						]}
 					>
 						<TextArea
 							rows={3}
@@ -208,26 +218,46 @@ export const CourseInterventionTab = ({
 
 			{/* Hiển thị kết quả sau khi chạy prompt */}
 			{resultData && (
-				<Card title="Báo cáo kết quả thực thi" bordered={false} className="shadow-sm">
+				<Card
+					title="Báo cáo kết quả thực thi"
+					bordered={false}
+					className="shadow-sm"
+				>
 					{!resultData.isPromptClear ? (
 						<div className="rounded-lg bg-error/10 p-4 text-error">
-							<Title level={5} className="text-error">Yêu cầu chưa đủ rõ</Title>
+							<Title level={5} className="text-error">
+								Yêu cầu chưa đủ rõ
+							</Title>
 							<Paragraph>{resultData.clarificationRequest}</Paragraph>
 						</div>
 					) : (
 						<div className="space-y-space-md">
 							<Row gutter={16}>
 								<Col xs={12} sm={6}>
-									<Statistic title="Đã đánh giá" value={resultData.summary.totalEvaluated} />
+									<Statistic
+										title="Đã đánh giá"
+										value={resultData.summary.totalEvaluated}
+									/>
 								</Col>
 								<Col xs={12} sm={6}>
-									<Statistic title="Đã gửi thông báo" value={resultData.summary.sentCount} valueStyle={{ color: '#3f8600' }} />
+									<Statistic
+										title="Đã gửi thông báo"
+										value={resultData.summary.sentCount}
+										valueStyle={{ color: '#3f8600' }}
+									/>
 								</Col>
 								<Col xs={12} sm={6}>
-									<Statistic title="Bỏ qua (ASP)" value={resultData.summary.skippedCount} />
+									<Statistic
+										title="Bỏ qua (ASP)"
+										value={resultData.summary.skippedCount}
+									/>
 								</Col>
 								<Col xs={12} sm={6}>
-									<Statistic title="Chặn (Lệch dữ kiện)" value={resultData.summary.blockedCount} valueStyle={{ color: '#cf1322' }} />
+									<Statistic
+										title="Chặn (Lệch dữ kiện)"
+										value={resultData.summary.blockedCount}
+										valueStyle={{ color: '#cf1322' }}
+									/>
 								</Col>
 							</Row>
 
@@ -244,7 +274,9 @@ export const CourseInterventionTab = ({
 											<div>
 												<Text strong>{text}</Text>
 												<br />
-												<Text type="secondary" className="text-xs">{record.studentCode || record.userId}</Text>
+												<Text type="secondary" className="text-xs">
+													{record.studentCode || record.userId}
+												</Text>
 											</div>
 										),
 									},
@@ -253,7 +285,8 @@ export const CourseInterventionTab = ({
 										key: 'context',
 										render: (_, record) => (
 											<span>
-												{record.contextSummary.progressPercent}% · {record.contextSummary.overdueLessonsCount} bài quá hạn
+												{record.contextSummary.progressPercent}% ·{' '}
+												{record.contextSummary.overdueLessonsCount} bài quá hạn
 											</span>
 										),
 									},
@@ -292,7 +325,11 @@ export const CourseInterventionTab = ({
 			)}
 
 			{/* Lịch sử các lần can thiệp trong khoá học */}
-			<Card title="Lịch sử các lần can thiệp đã gửi" bordered={false} className="shadow-sm">
+			<Card
+				title="Lịch sử các lần can thiệp đã gửi"
+				bordered={false}
+				className="shadow-sm"
+			>
 				<Table
 					dataSource={history}
 					rowKey="id"
@@ -338,7 +375,11 @@ export const CourseInterventionTab = ({
 				onOk={() => setModalVisible(false)}
 				onCancel={() => setModalVisible(false)}
 				footer={[
-					<Button key="close" type="primary" onClick={() => setModalVisible(false)}>
+					<Button
+						key="close"
+						type="primary"
+						onClick={() => setModalVisible(false)}
+					>
 						Đóng
 					</Button>,
 				]}
@@ -359,16 +400,19 @@ export const CourseInterventionTab = ({
 								{selectedResult.generatedContent}
 							</div>
 						</div>
-						{selectedResult.groundingIssues && selectedResult.groundingIssues.length > 0 && (
-							<div className="rounded-lg bg-error/10 p-3 text-error">
-								<Text strong className="text-error">Cảnh báo Grounding:</Text>
-								<ul className="list-disc pl-4">
-									{selectedResult.groundingIssues.map((issue, idx) => (
-										<li key={idx}>{issue}</li>
-									))}
-								</ul>
-							</div>
-						)}
+						{selectedResult.groundingIssues &&
+							selectedResult.groundingIssues.length > 0 && (
+								<div className="rounded-lg bg-error/10 p-3 text-error">
+									<Text strong className="text-error">
+										Cảnh báo Grounding:
+									</Text>
+									<ul className="list-disc pl-4">
+										{selectedResult.groundingIssues.map((issue, idx) => (
+											<li key={idx}>{issue}</li>
+										))}
+									</ul>
+								</div>
+							)}
 					</div>
 				)}
 			</Modal>

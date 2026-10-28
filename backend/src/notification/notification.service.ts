@@ -26,7 +26,9 @@ export class NotificationService {
 	 * Tạo và lưu thông báo mới xuống DB (kênh in_app, email hoặc websocket)
 	 * để học viên nhận được trên dashboard/ứng dụng.
 	 */
-	async sendNotification(params: CreateNotificationParams): Promise<Notification> {
+	async sendNotification(
+		params: CreateNotificationParams,
+	): Promise<Notification> {
 		const notification = this.notificationRepo.create({
 			userId: params.userId,
 			notificationType: params.notificationType,

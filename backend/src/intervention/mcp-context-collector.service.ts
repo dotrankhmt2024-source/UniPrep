@@ -168,7 +168,9 @@ export class McpContextCollectorService {
 
 			const submittedQuizIds = new Set(
 				userSubmissions
-					.filter((sub) => sub.status === 'submitted' || sub.status === 'graded')
+					.filter(
+						(sub) => sub.status === 'submitted' || sub.status === 'graded',
+					)
 					.map((sub) => sub.quizId),
 			);
 
@@ -214,9 +216,8 @@ export class McpContextCollectorService {
 
 			// Dự đoán rủi ro mới nhất (nếu có trong bảng risk_predictions)
 			const latestRisk =
-				currentRiskPredictions.find(
-					(rp) => rp.userId === enrollment.userId,
-				) ?? null;
+				currentRiskPredictions.find((rp) => rp.userId === enrollment.userId) ??
+				null;
 
 			return {
 				userId: enrollment.userId,

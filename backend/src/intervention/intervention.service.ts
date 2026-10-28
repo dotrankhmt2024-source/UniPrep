@@ -60,9 +60,9 @@ export class InterventionService {
 			}
 			const isOwner = course.ownerId === actor.id;
 			const isAssigned =
-				await this.courseInstructorRepo.count({
+				(await this.courseInstructorRepo.count({
 					where: { courseId: course.id, userId: actor.id },
-				}) > 0;
+				})) > 0;
 
 			if (!isOwner && !isAssigned) {
 				throw new ForbiddenException(
@@ -77,7 +77,12 @@ export class InterventionService {
 			return {
 				isPromptClear: false,
 				clarificationRequest: promptIntent.clarificationReason,
-				summary: { totalEvaluated: 0, sentCount: 0, skippedCount: 0, blockedCount: 0 },
+				summary: {
+					totalEvaluated: 0,
+					sentCount: 0,
+					skippedCount: 0,
+					blockedCount: 0,
+				},
 				results: [],
 			};
 		}
@@ -97,7 +102,12 @@ export class InterventionService {
 					targetCriteria: Object.keys(promptIntent.targetCriteria),
 					thresholds: promptIntent.targetCriteria,
 				},
-				summary: { totalEvaluated: 0, sentCount: 0, skippedCount: 0, blockedCount: 0 },
+				summary: {
+					totalEvaluated: 0,
+					sentCount: 0,
+					skippedCount: 0,
+					blockedCount: 0,
+				},
 				results: [],
 			};
 		}
@@ -189,7 +199,7 @@ export class InterventionService {
 				userId: context.userId,
 				instructorId: actor.id,
 				enrollmentId: context.enrollmentId,
-                riskPredictionId: context.latestRiskPrediction?.id ?? null,
+				riskPredictionId: context.latestRiskPrediction?.id ?? null,
 				interventionType: dto.interventionType ?? 'in_app_message',
 				channel: dto.channel ?? 'in_app',
 				title: draftedMessage.title,
@@ -211,7 +221,10 @@ export class InterventionService {
 				body: draftedMessage.content,
 				relatedType: 'intervention',
 				relatedId: savedIntervention.id,
-				payload: { courseId: dto.courseId, interventionId: savedIntervention.id },
+				payload: {
+					courseId: dto.courseId,
+					interventionId: savedIntervention.id,
+				},
 			});
 
 			sentCount++;
@@ -257,7 +270,9 @@ export class InterventionService {
 			where: { id: courseId, deletedAt: IsNull() },
 		});
 		if (!course) {
-			throw new NotFoundException(`Không tìm thấy khoá học với ID: ${courseId}`);
+			throw new NotFoundException(
+				`Không tìm thấy khoá học với ID: ${courseId}`,
+			);
 		}
 
 		if (actor.role !== 'admin') {

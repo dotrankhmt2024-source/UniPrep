@@ -10,7 +10,8 @@ export class AiGatewayService {
 
 	constructor(private readonly configService: ConfigService) {
 		this.aiServiceUrl =
-			this.configService.get<string>('AI_SERVICE_URL') ?? 'http://127.0.0.1:8000';
+			this.configService.get<string>('AI_SERVICE_URL') ??
+			'http://127.0.0.1:8000';
 		this.apiKey = this.configService.get<string>('AI_SERVICE_API_KEY') ?? '';
 	}
 

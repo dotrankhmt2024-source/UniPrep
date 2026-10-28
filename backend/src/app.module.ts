@@ -16,7 +16,6 @@ import { ExerciseModule } from './exercise/exercise.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
-
 @Module({
 	imports: [
 		ConfigModule.forRoot({
