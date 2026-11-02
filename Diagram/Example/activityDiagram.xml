@@ -1,0 +1,145 @@
+<mxGraphModel dx="2248" dy="1132" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="pool" parent="1" style="swimlane;startSize=20;horizontal=1;fontSize=12;fontStyle=1;html=1;" value="Recommendation" vertex="1">
+      <mxGeometry height="1100" width="840" x="40" y="40" as="geometry" />
+    </mxCell>
+    <mxCell id="laneStudent" parent="pool" style="swimlane;startSize=20;horizontal=1;fontSize=11;fontStyle=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Student" vertex="1">
+      <mxGeometry height="1060" width="280" y="20" as="geometry" />
+    </mxCell>
+    <mxCell id="start" parent="laneStudent" style="shape=mxgraph.bpmn.shape;html=1;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;align=center;perimeter=ellipsePerimeter;outlineConnect=0;outline=standard;symbol=general;" value="" vertex="1">
+      <mxGeometry height="36" width="36" x="122" y="30" as="geometry" />
+    </mxCell>
+    <mxCell id="t_request" parent="laneStudent" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Request recommendation" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="90" as="geometry" />
+    </mxCell>
+    <mxCell id="t_complete" parent="laneStudent" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Complete required student or course information" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="380" as="geometry" />
+    </mxCell>
+    <mxCell id="t_retry" parent="laneStudent" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Request recommendation again" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="490" as="geometry" />
+    </mxCell>
+    <mxCell id="t_view" parent="laneStudent" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="View recommendation result" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="910" as="geometry" />
+    </mxCell>
+    <mxCell id="end" parent="laneStudent" style="shape=mxgraph.bpmn.shape;html=1;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;align=center;perimeter=ellipsePerimeter;outlineConnect=0;outline=end;symbol=terminate;" value="" vertex="1">
+      <mxGeometry height="36" width="36" x="122" y="1010" as="geometry" />
+    </mxCell>
+    <mxCell id="e_start_request" edge="1" parent="laneStudent" source="start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="t_request">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_complete_retry" edge="1" parent="laneStudent" source="t_complete" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="t_retry">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_view_end" edge="1" parent="laneStudent" source="t_view" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="end">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="laneWeb" parent="pool" style="swimlane;startSize=20;horizontal=1;fontSize=11;fontStyle=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Web Interface" vertex="1">
+      <mxGeometry height="1060" width="280" x="280" y="20" as="geometry" />
+    </mxCell>
+    <mxCell id="t_send" parent="laneWeb" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Send recommendation request" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="90" as="geometry" />
+    </mxCell>
+    <mxCell id="t_auth_error" parent="laneWeb" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Ask student to sign in" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="180" as="geometry" />
+    </mxCell>
+    <mxCell id="end_auth" parent="laneWeb" style="shape=mxgraph.bpmn.shape;html=1;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;align=center;perimeter=ellipsePerimeter;outlineConnect=0;outline=end;symbol=terminate;" value="" vertex="1">
+      <mxGeometry height="36" width="36" x="122" y="260" as="geometry" />
+    </mxCell>
+    <mxCell id="t_missing" parent="laneWeb" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Show profile or course data that needs completion" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="380" as="geometry" />
+    </mxCell>
+    <mxCell id="t_display" parent="laneWeb" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Display recommendations and rationale" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="680" as="geometry" />
+    </mxCell>
+    <mxCell id="t_none" parent="laneWeb" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Display no suitable recommendations and explain why" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="810" as="geometry" />
+    </mxCell>
+    <mxCell id="e_auth_end" edge="1" parent="laneWeb" source="t_auth_error" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="end_auth">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="laneSystem" parent="pool" style="swimlane;startSize=20;horizontal=1;fontSize=11;fontStyle=1;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="System" vertex="1">
+      <mxGeometry height="1060" width="280" x="560" y="20" as="geometry" />
+    </mxCell>
+    <mxCell id="t_verify" parent="laneSystem" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Verify session and profile ownership" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="90" as="geometry" />
+    </mxCell>
+    <mxCell id="gw_session" parent="laneSystem" style="shape=mxgraph.bpmn.shape;html=1;verticalLabelPosition=top;labelBackgroundColor=#ffffff;verticalAlign=bottom;align=center;perimeter=rhombusPerimeter;background=gateway;outlineConnect=0;outline=none;symbol=exclusiveGw;fontSize=11;" value="Session valid?" vertex="1">
+      <mxGeometry height="40" width="40" x="120" y="190" as="geometry" />
+    </mxCell>
+    <mxCell id="t_load" parent="laneSystem" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Load student profile, course statuses, curriculum and academic rules" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="290" as="geometry" />
+    </mxCell>
+    <mxCell id="gw_data" parent="laneSystem" style="shape=mxgraph.bpmn.shape;html=1;verticalLabelPosition=top;labelBackgroundColor=#ffffff;verticalAlign=bottom;align=center;perimeter=rhombusPerimeter;background=gateway;outlineConnect=0;outline=none;symbol=exclusiveGw;fontSize=11;" value="Required data complete?" vertex="1">
+      <mxGeometry height="40" width="40" x="120" y="390" as="geometry" />
+    </mxCell>
+    <mxCell id="t_generate" parent="laneSystem" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Generate recommendations from student data and academic rules" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="490" as="geometry" />
+    </mxCell>
+    <mxCell id="t_save" parent="laneSystem" style="shape=mxgraph.bpmn.task2;html=1;rounded=1;whiteSpace=wrap;fontSize=11;" value="Save recommendation result and explanation" vertex="1">
+      <mxGeometry height="60" width="160" x="60" y="590" as="geometry" />
+    </mxCell>
+    <mxCell id="gw_recommendations" parent="laneSystem" style="shape=mxgraph.bpmn.shape;html=1;verticalLabelPosition=top;labelBackgroundColor=#ffffff;verticalAlign=bottom;align=center;perimeter=rhombusPerimeter;background=gateway;outlineConnect=0;outline=none;symbol=exclusiveGw;fontSize=11;" value="Suitable recommendations found?" vertex="1">
+      <mxGeometry height="40" width="40" x="120" y="690" as="geometry" />
+    </mxCell>
+    <mxCell id="e_verify_session" edge="1" parent="laneSystem" source="t_verify" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="gw_session">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_session_yes" edge="1" parent="laneSystem" source="gw_session" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=11;" target="t_load" value="Yes">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_load_data" edge="1" parent="laneSystem" source="t_load" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="gw_data">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_data_yes" edge="1" parent="laneSystem" source="gw_data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=11;" target="t_generate" value="Yes">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_generate_save" edge="1" parent="laneSystem" source="t_generate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="t_save">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_save_decide" edge="1" parent="laneSystem" source="t_save" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="gw_recommendations">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_request_send" edge="1" parent="pool" source="t_request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="t_send">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_send_verify" edge="1" parent="pool" source="t_send" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="t_verify">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_session_no" edge="1" parent="pool" source="gw_session" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;fontSize=11;" target="t_auth_error" value="No">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_data_no" edge="1" parent="pool" source="gw_data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;fontSize=11;" target="t_missing" value="No">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_missing_complete" edge="1" parent="pool" source="t_missing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" target="t_complete">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_recommendations_yes" edge="1" parent="pool" source="gw_recommendations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;fontSize=11;" target="t_display" value="Yes">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_recommendations_no" edge="1" parent="pool" source="gw_recommendations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=1;entryY=0.5;fontSize=11;" target="t_none" value="No">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_display_view" edge="1" parent="pool" source="t_display" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" target="t_view">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="310" y="730" />
+          <mxPoint x="310" y="960" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="yso6mFsMC7qsg0D7qUY8-25" edge="1" parent="pool" source="t_retry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.002;entryY=0.795;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;" target="t_send">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="300" y="540" />
+          <mxPoint x="300" y="157.7" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="yso6mFsMC7qsg0D7qUY8-26" edge="1" parent="pool" source="t_none" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.502;entryY=-0.026;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;" target="t_view">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
