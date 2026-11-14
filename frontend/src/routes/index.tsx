@@ -19,6 +19,7 @@ const TeacherQuizManagerPage = lazy(
 );
 const ProfilePage = lazy(() => import('@/pages/profile'));
 const TutorPage = lazy(() => import('@/pages/tutor'));
+const CourseAnalyticsPage = lazy(() => import('@/pages/teacher/analytics'));
 const AdminUsersPage = lazy(() => import('@/pages/admin/users'));
 const LoginPage = lazy(() => import('@/pages/auth/login'));
 const RegisterPage = lazy(() => import('@/pages/auth/register'));
@@ -91,6 +92,11 @@ const router = createBrowserRouter([
 							{
 								path: 'teacher/courses/:courseId/quizzes',
 								Component: TeacherQuizManagerPage,
+							},
+							// Learning analytics & cảnh báo sớm (E8–E10).
+							{
+								path: 'teacher/courses/:courseId/analytics',
+								Component: CourseAnalyticsPage,
 							},
 						],
 					},

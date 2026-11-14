@@ -227,13 +227,22 @@ const TeacherCourseEditorPage = () => {
 				</ErrorBadge>
 			)}
 
-			<Link
-				to={`/teacher/courses/${courseId}/quizzes`}
-				className="inline-flex items-center gap-2 border-y border-outline-variant py-space-sm font-label-md text-secondary hover:underline"
-			>
-				<Icon name="quiz" size={18} />
-				Ngân hàng câu hỏi & bài kiểm tra
-			</Link>
+			<div className="flex flex-wrap gap-x-space-lg border-y border-outline-variant py-space-sm">
+				<Link
+					to={`/teacher/courses/${courseId}/quizzes`}
+					className="inline-flex items-center gap-2 font-label-md text-secondary hover:underline"
+				>
+					<Icon name="quiz" size={18} />
+					Ngân hàng câu hỏi & bài kiểm tra
+				</Link>
+				<Link
+					to={`/teacher/courses/${courseId}/analytics`}
+					className="inline-flex items-center gap-2 font-label-md text-secondary hover:underline"
+				>
+					<Icon name="monitoring" size={18} />
+					Phân tích học tập & cảnh báo sớm
+				</Link>
+			</div>
 
 			<div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-space-md shadow-sm">
 				<Tabs
@@ -282,7 +291,7 @@ const TeacherCourseEditorPage = () => {
 						},
 						{
 							key: 'intervention',
-							label: 'Cảnh báo sớm (AI)',
+							label: 'Thông báo theo prompt',
 							children: <CourseInterventionTab courseId={courseId} />,
 						},
 					]}

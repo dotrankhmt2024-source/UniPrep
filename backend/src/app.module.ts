@@ -1,6 +1,7 @@
 import { InterventionModule } from './intervention/intervention.module';
 import { NotificationModule } from './notification/notification.module';
 import { TutorModule } from './tutor/tutor.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -57,6 +58,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 		NotificationModule,
 		InterventionModule,
 		TutorModule,
+		AnalyticsModule,
 	],
 	controllers: [AppController],
 	providers: [

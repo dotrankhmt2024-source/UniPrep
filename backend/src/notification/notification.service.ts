@@ -81,10 +81,29 @@ export class NotificationService {
 		if (!notification.isRead) {
 			notification.isRead = true;
 			notification.readAt = new Date();
-			return this.notificationRepo.save(notification);
+			const saved = await this.notificationRepo.save(notification);
+			if (notification.relatedType === 'intervention' && notification.relatedId)
+				await this.acknowledgeIntervention(notification.relatedId, userId);
+			return saved;
 		}
 
 		return notification;
+	}
+
+	/**
+	 * Học viên mở thông báo can thiệp ⇒ can thiệp chuyển `acknowledged` (khép vòng cảnh báo sớm: giảng
+	 * viên biết học viên đã đọc). Cập nhật thẳng bằng SQL để module thông báo không phụ thuộc module can
+	 * thiệp; chỉ chạm can thiệp của chính học viên đó và đang ở trạng thái `sent`.
+	 */
+	private async acknowledgeIntervention(
+		interventionId: string,
+		userId: string,
+	): Promise<void> {
+		await this.notificationRepo.manager.query(
+			`UPDATE interventions SET status = 'acknowledged', acknowledged_at = now(), updated_at = now()
+			  WHERE id = $1 AND user_id = $2 AND status = 'sent'`,
+			[interventionId, userId],
+		);
 	}
 
 	/**

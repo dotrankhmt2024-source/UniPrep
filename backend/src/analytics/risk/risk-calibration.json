@@ -1,0 +1,89 @@
+{
+	"version": "asp-oulad-v1",
+	"createdAt": "2026-11-14T09:14:08.222Z",
+	"source": {
+		"dataset": "Open University Learning Analytics Dataset (OULAD)",
+		"url": "https://archive.ics.uci.edu/dataset/349/open+university+learning+analytics+dataset",
+		"license": "CC BY 4.0 — Kuzilek, Hlosta & Zdrahal (2017), Scientific Data 4:170171",
+		"trainPresentations": ["2013B", "2013J"],
+		"testPresentations": ["2014B", "2014J"],
+		"checkpoints": [28, 56, 84, 112],
+		"label": "final_result ∈ {Withdrawn, Fail}"
+	},
+	"thresholds": {
+		"inactiveDays": 9,
+		"lowActiveDays": 3,
+		"declinePercent": 25,
+		"declineMinPrev": 3,
+		"missedMin": 1,
+		"lateMin": 1,
+		"lowScore": 70,
+		"scoreDrop": 15,
+		"recentSubmissionDays": 7,
+		"goodScore": 70
+	},
+	"model": {
+		"intercept": -1.3214,
+		"weights": {
+			"never_active": 1.6592,
+			"inactive": 0.91,
+			"low_engagement": 0.3717,
+			"declining": 0.0572,
+			"missed_work": 1.7987,
+			"late_work": 0.0259,
+			"low_score": 1.138,
+			"score_drop": 0.4076
+		}
+	},
+	"cutoffs": {
+		"medium": 0.296,
+		"high": 0.6741
+	},
+	"metrics": {
+		"test": {
+			"rows": 59551,
+			"auc": 0.7602434486285475,
+			"medium": {
+				"tp": 18129,
+				"fp": 12405,
+				"tn": 22852,
+				"fn": 6165,
+				"precision": 0.593731577913146,
+				"recall": 0.7462336379352926,
+				"f1": 0.661304442985336,
+				"fpr": 0.3518450236832402,
+				"accuracy": 0.6881664455676647
+			},
+			"high": {
+				"tp": 9325,
+				"fp": 1807,
+				"tn": 33450,
+				"fn": 14969,
+				"precision": 0.8376751706791232,
+				"recall": 0.38383963118465464,
+				"f1": 0.5264495003669621,
+				"fpr": 0.05125223359900161,
+				"accuracy": 0.7182918842672668
+			}
+		},
+		"baselineLogisticContinuous": {
+			"auc": 0.7955697463753079,
+			"medium": {
+				"tp": 19251,
+				"fp": 13351,
+				"tn": 21906,
+				"fn": 5043,
+				"precision": 0.5904852463039078,
+				"recall": 0.7924178809582613,
+				"f1": 0.6767083802024747,
+				"fpr": 0.3786765748645659,
+				"accuracy": 0.6911218955181273
+			}
+		},
+		"leadTime": {
+			"withdrawnStudents": 3014,
+			"flaggedBeforeWithdrawal": 2595,
+			"medianDays": 68
+		}
+	}
+}

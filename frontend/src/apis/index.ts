@@ -21,3 +21,4 @@ export * from './material';
 export * from './user';
 export * from './intervention';
 export * from './tutor';
+export * from './analytics';
