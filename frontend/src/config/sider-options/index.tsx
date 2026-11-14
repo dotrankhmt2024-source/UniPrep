@@ -4,6 +4,7 @@ import {
 	FolderOpenOutlined,
 	IdcardOutlined,
 	ReadOutlined,
+	RobotOutlined,
 	TeamOutlined,
 } from '@ant-design/icons';
 import type { UserRole } from '@/types';
@@ -37,6 +38,13 @@ export const sidebarMenu: SidebarItem[] = [
 		icon: <FolderOpenOutlined />,
 		path: '/my-courses',
 		roles: ['student'],
+		group: 'HỌC TẬP',
+	},
+	{
+		key: 'tutor',
+		label: 'Trợ giảng AI',
+		icon: <RobotOutlined />,
+		path: '/tutor',
 		group: 'HỌC TẬP',
 	},
 	{

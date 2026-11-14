@@ -18,6 +18,7 @@ const TeacherQuizManagerPage = lazy(
 	() => import('@/pages/teacher/quiz-manager'),
 );
 const ProfilePage = lazy(() => import('@/pages/profile'));
+const TutorPage = lazy(() => import('@/pages/tutor'));
 const AdminUsersPage = lazy(() => import('@/pages/admin/users'));
 const LoginPage = lazy(() => import('@/pages/auth/login'));
 const RegisterPage = lazy(() => import('@/pages/auth/register'));
@@ -70,6 +71,8 @@ const router = createBrowserRouter([
 						path: 'courses/:courseId/learn/:lessonId',
 						Component: LessonViewerPage,
 					},
+					// Trợ giảng AI: mọi vai trò đã đăng nhập; backend chỉ cho hỏi trên khoá học họ được xem.
+					{ path: 'tutor', Component: TutorPage },
 					// Hồ sơ cá nhân (E2-T4): mọi vai trò đã đăng nhập đều sửa được hồ sơ của mình.
 					{ path: 'profile', Component: ProfilePage },
 					// Khu soạn nội dung (E3-T9): chỉ giảng viên và admin. Giảng viên vẫn chỉ sửa

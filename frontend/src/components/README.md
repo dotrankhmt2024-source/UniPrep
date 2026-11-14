@@ -43,6 +43,7 @@ Không tự dựng header/sidebar/menu trong page. Muốn thêm mục menu → s
 | `Badge`           | `@/components` | Pill trạng thái. `status="success" \| "warning" \| "error" \| "info" \| "neutral" \| "processing"`     |
 | `ErrorBadge`      | `@/components` | `Badge` với `status="error"` — dùng để hiển thị lỗi validate/API                                       |
 | `Icon`            | `@/components` | Wrapper Material Symbols: `<Icon name="school" size={18} />`                                           |
+| `ProseContent`    | `@/components` | Hiển thị nội dung markdown/HTML đã làm sạch (bài học, câu trả lời AI): `format="markdown" \| "html"`   |
 
 `ITable` yêu cầu prop `pagination` (`{ total, pageSize, current, onChange }` hoặc `false`).
 

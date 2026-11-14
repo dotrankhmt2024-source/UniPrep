@@ -29,6 +29,7 @@
 		"axios": "^1.7.9",
 		"dayjs": "^1.11.23",
 		"dompurify": "^3.4.16",
+		"marked": "^15.0.12",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"react-redux": "^9.2.0",

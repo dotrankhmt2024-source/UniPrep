@@ -10,7 +10,14 @@ import {
 } from '@/apis/enrollment';
 import { getLessonById, getLessons, getSections } from '@/apis/lesson';
 import { getMaterials } from '@/apis/material';
-import { Badge, ErrorBadge, Icon, IOutLinedBtn, ISolidBtn } from '@/components';
+import {
+	Badge,
+	ErrorBadge,
+	Icon,
+	IOutLinedBtn,
+	ISolidBtn,
+	ProseContent,
+} from '@/components';
 import { getApiErrorMessage } from '@/config/query-method/axiosMethod.config';
 import type {
 	CourseDetail,
@@ -18,7 +25,6 @@ import type {
 	LessonListItem,
 	SectionListItem,
 } from '@/types';
-import { sanitizeHtml } from '@/utils/html';
 import { useAppSelector } from '@/store/hooks';
 import LessonOutline from './lesson-outline';
 import MaterialList from './material-list';
@@ -32,26 +38,14 @@ import {
 } from './lesson-viewer.helpers';
 
 /**
- * Nội dung bài học dưới dạng HTML.
+ * Nội dung bài học.
  *
- * **Đây là chốt chặn XSS của trang.** `sanitizeHtml` lọc theo allowlist thẻ/thuộc tính mà TipTap
- * sinh ra trước khi đưa vào `dangerouslySetInnerHTML`; không được đổi thành `lesson.content` thô.
- *
- * Vì sao kiểm tra cả `contentFormat`: trường đó chỉ nói dữ liệu được *soạn* ở dạng nào, không bảo
- * đảm nội dung an toàn. `markdown`/`tiptap_json` là văn bản tự do nằm trong cùng cột `content` và
- * chế độ "Mã HTML" của TipTap cho phép gõ tay thẻ HTML — nên mọi định dạng đều đi qua `sanitizeHtml`
- * trước khi hiển thị; chỉ cách diễn giải là khác nhau.
- *
- * `[&_...]` của Tailwind 4 đặt typography cho các thẻ con vì nội dung được chèn bằng chuỗi HTML,
- * không phải bằng JSX nên không gắn class trực tiếp cho từng thẻ được. Không mượn `.rte-content`
- * của `styles/rich-text-editor.css`: các rule ở đó chỉ áp cho `.rte-content .tiptap` (do trình soạn
- * thảo sinh ra), nên ở đây chúng không có tác dụng gì.
+ * `contentFormat = 'markdown'` (ví dụ tài liệu import từ GitHub Docs) được render thành HTML bằng
+ * `marked`; các định dạng khác là HTML do TipTap sinh ra. Cả hai đều đi qua `sanitizeHtml` bên trong
+ * `ProseContent` — **chốt chặn XSS của trang**, không được đổi thành `lesson.content` thô.
  */
 const LessonContent = ({ lesson }: { lesson: LessonDetail }) => (
-	<div
-		className="font-body-md font-body-md text-on-surface [&_a]:text-secondary [&_a]:underline [&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-outline-variant [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-on-surface-variant [&_code]:rounded [&_code]:bg-surface-container [&_code]:px-1 [&_code]:py-0.5 [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:text-headline-sm [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-title-lg [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-title-md [&_h3]:font-semibold [&_hr]:my-5 [&_hr]:border-outline-variant [&_li]:mb-1 [&_ol]:mb-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-3 [&_p]:leading-relaxed [&_pre]:mb-3 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-container [&_pre]:p-3 [&_table]:mb-3 [&_table]:w-full [&_td]:border [&_td]:border-outline-variant [&_td]:p-2 [&_th]:border [&_th]:border-outline-variant [&_th]:bg-surface-container-low [&_th]:p-2 [&_th]:text-left [&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-6"
-		dangerouslySetInnerHTML={{ __html: sanitizeHtml(lesson.content) }}
-	/>
+	<ProseContent content={lesson.content} format={lesson.contentFormat} />
 );
 
 /**
@@ -493,6 +487,17 @@ const LessonViewerPage = () => {
 											Hạn {dayjs(lesson.dueAt).format('DD/MM/YYYY HH:mm')}
 										</Badge>
 									)}
+									<Link
+										className="ml-auto"
+										to={`/tutor?course=${courseId}&lesson=${lesson.id}`}
+									>
+										<IOutLinedBtn
+											mode="primary"
+											icon={<Icon name="smart_toy" size={16} />}
+										>
+											Hỏi trợ giảng AI
+										</IOutLinedBtn>
+									</Link>
 								</div>
 
 								<h1 className="font-headline-md font-headline-md text-on-surface">

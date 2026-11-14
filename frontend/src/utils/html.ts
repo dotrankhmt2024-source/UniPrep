@@ -23,6 +23,12 @@ const ALLOWED_TAGS = [
 	'h1',
 	'h2',
 	'h3',
+	// h4–h6, img, del: markdown (`utils/markdown.ts`) sinh ra; TipTap không dùng.
+	'h4',
+	'h5',
+	'h6',
+	'img',
+	'del',
 	'strong',
 	'b',
 	'em',
@@ -57,6 +63,10 @@ const ALLOWED_ATTR = [
 	'data-color',
 	'colspan',
 	'rowspan',
+	// Ảnh trong markdown; DOMPurify vẫn chặn `javascript:`/`data:` trong `src`.
+	'src',
+	'alt',
+	'title',
 ];
 
 /** Bỏ qua hoàn toàn nội dung của các thẻ này thay vì chỉ bỏ thẻ. */
