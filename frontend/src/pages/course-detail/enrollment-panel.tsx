@@ -1,13 +1,17 @@
 import type { ReactNode } from 'react';
 import { Badge, ErrorBadge, Icon, ISolidBtn } from '@/components';
 import { ENROLLMENT_STATUS_LABEL, type CourseDetail } from '@/types';
-import { getEnrollmentStatusBadgeTone } from '@/utils/course';
+import {
+	getEnrollmentStatusBadgeTone,
+	hasActiveEnrollment,
+} from '@/utils/course';
 
 /**
  * Khối "Ghi danh" ở cột phải trang chi tiết khoá học (E3-T7).
  *
  * Bốn trạng thái, theo đúng thứ tự ưu tiên:
- * 1. `myEnrollment !== null` — đã ghi danh: hiện nhãn trạng thái ghi danh + nút "Vào học".
+ * 1. `myEnrollment` còn hiệu lực (khác `dropped`) — đã ghi danh: nhãn trạng thái + nút "Vào học".
+ *    Ghi danh đã huỷ rơi xuống nhánh 3/4 với nút "Đăng ký lại".
  * 2. `isStaff` (`role !== 'student'`) — giảng viên/admin **không bao giờ** thấy nút đăng ký.
  * 3. `eligibility.eligible === false` — thiếu tiên quyết: nút đăng ký bị khoá kèm lý do.
  * 4. Còn lại (học viên đủ điều kiện, hoặc `eligibility === null`) — nút đăng ký thật.
@@ -39,10 +43,13 @@ const CourseEnrollmentPanel = ({
 	onGoToLearn,
 }: CourseEnrollmentPanelProps) => {
 	const { myEnrollment, eligibility } = course;
+	// Đã huỷ ghi danh (`dropped`) thì coi như chưa đăng ký: backend `POST /enrollments` mở lại đúng
+	// dòng cũ (giữ lịch sử học), nên chỉ cần hiện lại nút đăng ký.
+	const wasDropped = myEnrollment?.status === 'dropped';
 
 	let body: ReactNode;
 
-	if (myEnrollment) {
+	if (hasActiveEnrollment(myEnrollment)) {
 		body = (
 			<>
 				<div className="flex flex-wrap items-center justify-between gap-space-sm">
@@ -111,7 +118,9 @@ const CourseEnrollmentPanel = ({
 		body = (
 			<>
 				<p className="font-body-sm font-body-sm text-on-surface-variant">
-					Bạn chưa đăng ký khoá học này.
+					{wasDropped
+						? 'Bạn đã huỷ đăng ký khoá học này. Đăng ký lại để tiếp tục học, tiến độ cũ vẫn được giữ.'
+						: 'Bạn chưa đăng ký khoá học này.'}
 				</p>
 				<ISolidBtn
 					type="primary"
@@ -123,7 +132,7 @@ const CourseEnrollmentPanel = ({
 					disabled={isEnrolling}
 					onClick={onEnroll}
 				>
-					Đăng ký khoá học
+					{wasDropped ? 'Đăng ký lại' : 'Đăng ký khoá học'}
 				</ISolidBtn>
 			</>
 		);

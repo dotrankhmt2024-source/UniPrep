@@ -26,6 +26,7 @@ import type {
 	SectionListItem,
 } from '@/types';
 import { useAppSelector } from '@/store/hooks';
+import { hasActiveEnrollment } from '@/utils/course';
 import LessonOutline from './lesson-outline';
 import MaterialList from './material-list';
 import {
@@ -149,8 +150,13 @@ const LessonViewerPage = () => {
 		};
 	}, [courseId]);
 
+	// Ghi danh đã huỷ (`dropped`) vẫn có `id` nhưng backend từ chối đọc tiến độ của nó.
+	const activeEnrollmentId = hasActiveEnrollment(course?.myEnrollment)
+		? course.myEnrollment.id
+		: null;
+
 	useEffect(() => {
-		const enrollmentId = course?.myEnrollment?.id;
+		const enrollmentId = activeEnrollmentId;
 		if (!enrollmentId) {
 			setEnrollmentProgress(null);
 			setProgressError('');
@@ -174,7 +180,7 @@ const LessonViewerPage = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [course?.myEnrollment?.id]);
+	}, [activeEnrollmentId]);
 
 	/** Mục lục đã gộp chương; trải phẳng ra là **lộ trình** dùng cho chọn bài, trước/sau và "Bài x / y". */
 	const outlineItems = useMemo(
@@ -318,8 +324,8 @@ const LessonViewerPage = () => {
 				await completeLesson(selectedLessonId);
 				message.success('Đã đánh dấu hoàn thành bài học.');
 			}
-			if (course?.myEnrollment?.id) {
-				const response = await getEnrollmentProgress(course.myEnrollment.id);
+			if (activeEnrollmentId) {
+				const response = await getEnrollmentProgress(activeEnrollmentId);
 				setEnrollmentProgress(response.data);
 			}
 		} catch (error) {
@@ -409,7 +415,7 @@ const LessonViewerPage = () => {
 				</div>
 
 				<div className="min-w-0 space-y-space-lg lg:col-span-8 xl:col-span-9">
-					{role === 'student' && course?.myEnrollment && (
+					{role === 'student' && activeEnrollmentId && (
 						<section className="space-y-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest p-space-md">
 							<div className="flex flex-wrap items-center justify-between gap-space-sm">
 								<span className="font-label-md text-on-surface">

@@ -59,6 +59,17 @@ export const getEnrollmentStatusBadgeTone = (
 	status: EnrollmentStatus,
 ): BadgeStatus => ENROLLMENT_STATUS_TONE[status];
 
+/**
+ * Ghi danh còn hiệu lực để vào học (`active`/`completed`/`expired`).
+ *
+ * Huỷ ghi danh **không xoá** dòng `enrollments` mà chỉ đặt `status = 'dropped'` (giữ lịch sử học),
+ * nên `myEnrollment` vẫn khác `null` sau khi huỷ. Mọi chỗ quyết định "đã đăng ký chưa" phải đi qua
+ * hàm này, nếu không học viên vừa huỷ sẽ thấy "Vào học" mà mất nút đăng ký lại.
+ */
+export const hasActiveEnrollment = <T extends { status: EnrollmentStatus }>(
+	enrollment: T | null | undefined,
+): enrollment is T => !!enrollment && enrollment.status !== 'dropped';
+
 export const COURSE_LEVEL_TONE: Record<CourseLevel, BadgeStatus> = {
 	beginner: 'success',
 	intermediate: 'warning',
