@@ -118,4 +118,13 @@ export class Lesson extends BaseEntityCustom {
 	/** Soft delete: bài đã xoá mềm không chiếm chỗ trong lộ trình (index partial). */
 	@Column({ type: 'timestamptz', name: 'deleted_at', nullable: true })
 	deletedAt: Date | null;
+
+	/** Khoá kỹ năng bên Catalog (`CO1023@9.1#3.4`); nội dung được AI sinh ở lần mở đầu tiên. */
+	@Column({
+		type: 'varchar',
+		name: 'catalog_key',
+		length: 120,
+		nullable: true,
+	})
+	catalogKey: string | null;
 }

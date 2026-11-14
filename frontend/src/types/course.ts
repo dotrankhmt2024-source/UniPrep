@@ -209,6 +209,8 @@ export interface FindCoursesParams {
 	semester?: string;
 	ownerId?: string;
 	level?: CourseLevel;
+	/** `catalog`: khoá mở từ đề cương của trường · `manual`: khoá giảng viên tự tạo. */
+	source?: 'catalog' | 'manual';
 }
 
 export interface FindCategoriesParams {

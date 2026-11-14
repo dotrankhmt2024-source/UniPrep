@@ -163,4 +163,21 @@ export class Quiz extends BaseEntityCustom {
 	// điểm của học viên (§11 câu hỏi mở 3).
 	@Column({ type: 'timestamptz', name: 'deleted_at', nullable: true })
 	deletedAt: Date | null;
+
+	/** Khoá chủ đề bên Catalog (`CO1023@9.1#T3`); câu hỏi được AI sinh ở lần làm bài đầu tiên. */
+	@Column({
+		type: 'varchar',
+		name: 'catalog_key',
+		length: 120,
+		nullable: true,
+	})
+	catalogKey: string | null;
+
+	/** Chủ của quiz cá nhân (học viên tự chọn phạm vi bài); `null` = quiz chung của khoá. */
+	@Column({ type: 'uuid', name: 'personal_user_id', nullable: true })
+	personalUserId: string | null;
+
+	/** Các `lessons.id` học viên chọn làm phạm vi đề của quiz cá nhân. */
+	@Column({ type: 'jsonb', name: 'scope_lesson_ids', nullable: true })
+	scopeLessonIds: string[] | null;
 }

@@ -41,4 +41,13 @@ export class CourseSection extends BaseEntityCustom {
 
 	@Column({ type: 'timestamptz', name: 'published_at', nullable: true })
 	publishedAt: Date | null;
+
+	/** Khoá chủ đề bên Catalog (`CO1023@9.1#T3`) khi chương được tạo từ đề cương. */
+	@Column({
+		type: 'varchar',
+		name: 'catalog_key',
+		length: 120,
+		nullable: true,
+	})
+	catalogKey: string | null;
 }

@@ -1,3 +1,4 @@
+import { AI_GENERATION_TIMEOUT_MS } from '../catalog-learning';
 import { queryMethod } from '@/config';
 import type {
 	CreateLessonPayload,
@@ -92,13 +93,16 @@ export const createLesson = (
 		DefaultResponseType<LessonDetail>
 	>;
 
-/** `GET /api/lessons/:id` — học viên phải đã ghi danh và bài phải đã publish. */
+/**
+ * `GET /api/lessons/:id` — học viên phải đã ghi danh và bài phải đã publish. Bài của khoá mở từ
+ * Catalog được AI soạn ở lần mở đầu tiên nên chờ lâu hơn mặc định.
+ */
 export const getLessonById = (
 	id: string,
 ): Promise<DefaultResponseType<LessonDetail>> =>
-	queryMethod.get(`/lessons/${id}`) as Promise<
-		DefaultResponseType<LessonDetail>
-	>;
+	queryMethod.get(`/lessons/${id}`, {
+		timeout: AI_GENERATION_TIMEOUT_MS,
+	}) as Promise<DefaultResponseType<LessonDetail>>;
 
 /** `PATCH /api/lessons/:id` */
 export const updateLesson = (

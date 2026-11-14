@@ -4,6 +4,7 @@ import { DataSource, In, IsNull, Repository } from 'typeorm';
 import { AlertSetting } from '../../admin/entities/alert-setting.entity';
 import { Intervention } from '../../intervention/entities/intervention.entity';
 import type { InterventionType, RiskLevel } from '../../common/types';
+import { NotificationService } from '../../notification/notification.service';
 import { ModelVersion } from '../entities/model-version.entity';
 import { RiskPrediction } from '../entities/risk-prediction.entity';
 import {
@@ -86,6 +87,7 @@ export class RiskService {
 		private readonly interventions: Repository<Intervention>,
 		private readonly features: RiskFeatureService,
 		private readonly engine: RiskEngineService,
+		private readonly notifications: NotificationService,
 	) {}
 
 	/** Bản ghi `model_versions` của bộ ASP hiện hành — tạo một lần, lần sau dùng lại. */
@@ -157,6 +159,17 @@ export class RiskService {
 			cutoffs,
 		);
 		const computedAt = new Date();
+		// Mức rủi ro trước lần chạy này — để chỉ báo học viên **vừa chuyển** lên `high` (E11-T2).
+		const previous = await this.predictions.find({
+			where: { courseId, isCurrent: true },
+			select: { userId: true, riskLevel: true },
+		});
+		const wasHigh = new Set(
+			previous
+				.filter((row) => row.riskLevel === 'high')
+				.map((row) => row.userId),
+		);
+		let saved: RiskPrediction[] = [];
 
 		await this.dataSource.transaction(async (manager) => {
 			await manager.update(
@@ -165,7 +178,7 @@ export class RiskService {
 				{ isCurrent: false },
 			);
 			if (!learners.length) return;
-			await manager.save(
+			saved = await manager.save(
 				RiskPrediction,
 				learners.map((learner, index) =>
 					this.toRow(learner, assessments[index], {
@@ -177,6 +190,14 @@ export class RiskService {
 				),
 			);
 		});
+
+		const escalations = saved
+			.filter((row) => row.riskLevel === 'high' && !wasHigh.has(row.userId))
+			.map((row) => ({ userId: row.userId, predictionId: row.id }));
+		if (escalations.length)
+			await this.notifications.safely(`risk_alert khoá ${courseId}`, () =>
+				this.notifications.notifyRiskEscalations(courseId, escalations),
+			);
 
 		const byLevel: Record<RiskLevel, number> = { low: 0, medium: 0, high: 0 };
 		assessments.forEach((item) => (byLevel[item.level] += 1));

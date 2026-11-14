@@ -1,5 +1,6 @@
 import { marked } from 'marked';
 import { sanitizeHtml } from './html';
+import { renderMarkdownWithMath } from './math';
 
 /**
  * Markdown → HTML **đã làm sạch**, dùng cho bài học có `contentFormat = 'markdown'` và câu trả lời
@@ -27,11 +28,15 @@ const replaceAlerts = (markdown: string): string =>
 
 export const renderMarkdown = (markdown: string | null | undefined): string => {
 	if (!markdown) return '';
-	const html = marked.parse(replaceAlerts(markdown), {
-		async: false,
-		gfm: true,
-		breaks: false,
-	});
 
-	return sanitizeHtml(html);
+	// Công thức LaTeX được tách ra trước `marked` và ghép lại sau `sanitizeHtml` — xem `utils/math`.
+	return renderMarkdownWithMath(replaceAlerts(markdown), (text) =>
+		sanitizeHtml(
+			marked.parse(text, {
+				async: false,
+				gfm: true,
+				breaks: false,
+			}),
+		),
+	);
 };

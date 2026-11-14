@@ -1,3 +1,4 @@
+import { CatalogContentService } from '../catalog-learning/catalog-content.service';
 import {
 	BadRequestException,
 	ConflictException,
@@ -54,6 +55,7 @@ import type { ReorderDto } from './dto/reorder.dto';
 import type { UpdateLessonDto } from './dto/update-lesson.dto';
 import type { UpdateSectionDto } from './dto/update-section.dto';
 import type { UploadMaterialDto } from './dto/upload-material.dto';
+import { NotificationService } from '../notification/notification.service';
 import type {
 	LessonMaterialStats,
 	MaterialAggregateRow,
@@ -152,6 +154,8 @@ export class LessonService {
 		private readonly courseAccess: CourseAccessService,
 		private readonly storage: StorageService,
 		private readonly dataSource: DataSource,
+		private readonly notifications: NotificationService,
+		private readonly catalogContent: CatalogContentService,
 	) {}
 
 	// =========================================================================
@@ -497,6 +501,7 @@ export class LessonService {
 		});
 
 		const saved = await this.lessons.save(lesson);
+		if (saved.isPublished) await this.notifyLessonPublished(saved.id);
 
 		return this.buildLessonDetail(saved, section);
 	}
@@ -519,7 +524,10 @@ export class LessonService {
 
 		await this.assertLessonViewable(lesson, course, actor);
 
-		return this.buildLessonDetail(lesson, section);
+		// Bài tạo từ Catalog: AI soạn nội dung ở lần mở đầu tiên rồi lưu lại (mất 10–40 giây).
+		const ready = await this.catalogContent.ensureLessonContent(lesson);
+
+		return this.buildLessonDetail(ready, section);
 	}
 
 	async completeLesson(
@@ -720,6 +728,8 @@ export class LessonService {
 		if (Object.keys(changes).length > 0) {
 			await this.lessons.update({ id }, changes);
 		}
+		if (changes.isPublished && !lesson.isPublished)
+			await this.notifyLessonPublished(id);
 
 		const updated = await this.findLessonOrFail(id);
 		const section = await this.findSectionOrFail(updated.sectionId);
@@ -1432,12 +1442,24 @@ export class LessonService {
 		);
 
 		const updated = await this.findLessonOrFail(id);
+		if (isPublished && !lesson.isPublished)
+			await this.notifyLessonPublished(id);
 
 		return {
 			id: updated.id,
 			isPublished: updated.isPublished,
 			updatedAt: updated.updatedAt,
 		};
+	}
+
+	/**
+	 * Báo học viên có bài học mới (`new_content`). Idempotent theo bài học: ẩn rồi công bố lại không
+	 * báo lần hai. Lỗi gửi thông báo không làm hỏng thao tác công bố.
+	 */
+	private async notifyLessonPublished(lessonId: string): Promise<void> {
+		await this.notifications.safely(`new_content lesson ${lessonId}`, () =>
+			this.notifications.notifyLessonPublished(lessonId),
+		);
 	}
 
 	/** Danh sách định dạng được nhận, viết theo nhãn tiếng Việt, cho thông báo `415`. */

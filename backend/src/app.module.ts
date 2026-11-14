@@ -2,6 +2,8 @@ import { InterventionModule } from './intervention/intervention.module';
 import { NotificationModule } from './notification/notification.module';
 import { TutorModule } from './tutor/tutor.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { CatalogLearningModule } from './catalog-learning/catalog-learning.module';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -59,6 +61,10 @@ import { RolesGuard } from './common/guards/roles.guard';
 		InterventionModule,
 		TutorModule,
 		AnalyticsModule,
+		// Nội dung môn học từ DB đề cương của trường (kết nối riêng, chỉ đọc).
+		CatalogModule,
+		// Học trên nội dung Catalog: danh sách môn, mở khoá học, AI sinh bài học/câu hỏi.
+		CatalogLearningModule,
 	],
 	controllers: [AppController],
 	providers: [

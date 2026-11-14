@@ -8,7 +8,7 @@ import {
 	startQuizAttempt,
 	submitQuizAttempt,
 } from '@/apis/assessment';
-import { ErrorBadge, Icon, ISolidBtn } from '@/components';
+import { ErrorBadge, Icon, ISolidBtn, MathText } from '@/components';
 import { getApiErrorMessage } from '@/config/query-method/axiosMethod.config';
 import { useAuth } from '@/contexts/auth-context';
 import { SUBMISSION_MODE_LABEL } from '@/types';
@@ -405,7 +405,8 @@ const QuizPage = () => {
 							className="space-y-space-md border-b border-outline-variant pb-space-lg"
 						>
 							<h2 className="font-title-lg text-on-surface">
-								{activeQuestionIndex + 1}. {activeQuestion.content}{' '}
+								{activeQuestionIndex + 1}.{' '}
+								<MathText text={activeQuestion.content} />{' '}
 								<span className="font-body-sm text-on-surface-variant">
 									({activeQuestion.points} điểm)
 								</span>
@@ -415,7 +416,7 @@ const QuizPage = () => {
 									className="flex flex-col gap-space-sm"
 									value={selected[activeQuestion.id] ?? []}
 									options={activeQuestion.options.map((option) => ({
-										label: option.content,
+										label: <MathText text={option.content} />,
 										value: option.id,
 									}))}
 									onChange={(ids) =>
@@ -438,7 +439,7 @@ const QuizPage = () => {
 								>
 									{activeQuestion.options.map((option) => (
 										<Radio key={option.id} value={option.id}>
-											{option.content}
+											<MathText text={option.content} />
 										</Radio>
 									))}
 								</Radio.Group>

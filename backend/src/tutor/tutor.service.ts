@@ -28,6 +28,7 @@ import { SendTutorMessageDto } from './dto/send-tutor-message.dto';
 import { TutorSession } from './entities/tutor-session.entity';
 import { TutorStep } from './entities/tutor-step.entity';
 import {
+	buildContentStatusContext,
 	buildLessonContext,
 	buildSystemPrompt,
 	withContext,
@@ -180,30 +181,44 @@ export class TutorService {
 
 		const index = await this.knowledge.getIndex(course.id);
 		const messages = this.replay(previous);
+		// Mã các bài trống, lưu kèm bước system/context để lượt sau biết model đang tin trạng thái nào.
+		const emptyLessons = this.knowledge.emptyLessonKeys(index).join(',');
 		if (!previous.some((step) => step.role === 'system')) {
 			const system = buildSystemPrompt(course, index.lessons, new Date());
 			await record({
 				role: 'system',
 				content: system,
-				data: { lessons: index.lessons.length, chunks: index.chunks.length },
+				data: {
+					lessons: index.lessons.length,
+					chunks: index.chunks.length,
+					emptyLessons,
+				},
 			});
 			messages.unshift({ role: 'system', content: system });
 		}
 
-		// Context chỉ gửi khi bài đang xem đổi so với lượt trước (model vẫn nhớ bản cũ trong lịch sử).
-		let context: string | null = null;
+		// Context chỉ gửi khi có gì mới so với lượt trước (model vẫn nhớ bản cũ trong lịch sử):
+		// bài đang xem đổi, hoặc có bài vừa được soạn nội dung / bài mới được công bố. System prompt
+		// chỉ ghi một lần mỗi phiên nên không có ghi chú này thì model cứ tưởng bài vẫn trống.
+		const parts: string[] = [];
+		const data: Record<string, unknown> = {};
+		if (emptyLessons !== this.knownEmptyLessons(previous, emptyLessons)) {
+			parts.push(buildContentStatusContext(index.lessons));
+			data.emptyLessons = emptyLessons;
+		}
 		const lessonId = dto.lessonId ?? null;
-		if (lessonId && lessonId !== session.contextLessonId) {
-			const lesson = index.lessons.find((item) => item.lessonId === lessonId);
-			if (lesson) {
-				context = buildLessonContext(lesson);
-				await record({
-					role: 'context',
-					content: context,
-					data: { lessonId, lessonKey: lesson.key },
-				});
-				session.contextLessonId = lessonId;
-			}
+		const viewing = lessonId
+			? index.lessons.find((item) => item.lessonId === lessonId)
+			: undefined;
+		if (viewing && lessonId !== session.contextLessonId) {
+			parts.push(buildLessonContext(viewing));
+			Object.assign(data, { lessonId, lessonKey: viewing.key });
+			session.contextLessonId = lessonId;
+		}
+		let context: string | null = null;
+		if (parts.length) {
+			context = parts.join('\n');
+			await record({ role: 'context', content: context, data });
 		}
 		const userContent = dto.message.trim();
 		await record({ role: 'user', content: userContent });
@@ -436,6 +451,17 @@ export class TutorService {
 	}
 
 	/* ------------------------------- Lịch sử ------------------------------- */
+
+	/** Danh sách bài trống mà model được báo gần nhất (bước system/context mới nhất có ghi). */
+	private knownEmptyLessons(steps: TutorStep[], fallback: string): string {
+		for (let i = steps.length - 1; i >= 0; i -= 1) {
+			const value = (steps[i].data as { emptyLessons?: unknown } | null)
+				?.emptyLessons;
+			if (typeof value === 'string') return value;
+		}
+		// Phiên cũ (trước khi có trường này): không biết thì thôi, tránh ghi chú thừa.
+		return fallback;
+	}
 
 	/**
 	 * Dựng lại danh sách tin nhắn cho model từ các bước đã lưu. Giữ nguyên `reasoning_content`

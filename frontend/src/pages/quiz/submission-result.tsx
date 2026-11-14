@@ -1,4 +1,5 @@
 import { Alert, Tag } from 'antd';
+import { MathText } from '@/components';
 import { SUBMISSION_MODE_LABEL } from '@/types';
 import type { QuizSubmissionResult, SubmissionReview } from '@/types';
 import SubmissionFilePanel from './submission-file-panel';
@@ -81,7 +82,7 @@ const SubmissionResult = ({ review, summary }: SubmissionResultProps) => {
 							className="space-y-space-sm border-t border-outline-variant pt-space-md"
 						>
 							<h3 className="font-title-md text-on-surface">
-								{index + 1}. {item.content}
+								{index + 1}. <MathText text={item.content} />
 							</h3>
 							<p className={item.isCorrect ? 'text-green-700' : 'text-red-700'}>
 								{item.isCorrect ? 'Chính xác' : 'Chưa chính xác'} ·{' '}
@@ -96,12 +97,12 @@ const SubmissionResult = ({ review, summary }: SubmissionResultProps) => {
 									{item.selectedOptionIds.includes(option.id)
 										? 'Đã chọn: '
 										: ''}
-									{option.content}
+									<MathText text={option.content} />
 								</p>
 							))}
 							{item.explanation && (
 								<p className="font-body-sm text-on-surface-variant">
-									{item.explanation}
+									<MathText text={item.explanation} />
 								</p>
 							)}
 						</article>

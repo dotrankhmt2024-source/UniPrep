@@ -4,7 +4,9 @@ import { CourseSection } from '../course/entities/course-section.entity';
 import { Enrollment } from '../course/entities/enrollment.entity';
 import { Quiz } from '../exercise/entities/quiz.entity';
 import { Submission } from '../exercise/entities/submission.entity';
+import { CatalogLearningModule } from '../catalog-learning/catalog-learning.module';
 import { CourseModule } from '../course/course.module';
+import { NotificationModule } from '../notification/notification.module';
 import { StorageModule } from '../storage/storage.module';
 import { LessonMaterial } from './entities/lesson-material.entity';
 import { LessonProgress } from './entities/lesson-progress.entity';
@@ -40,6 +42,8 @@ import { SectionsController } from './sections.controller';
 			Enrollment,
 		]),
 		CourseModule,
+		NotificationModule,
+		CatalogLearningModule,
 		// `StorageModule` là `@Global()` nhưng vẫn import tường minh: phụ thuộc hiện ra ngay trong
 		// `imports` giúp đọc module là biết nó ghi tệp lên đĩa (và không phụ thuộc vào thứ tự nạp
 		// module toàn cục).

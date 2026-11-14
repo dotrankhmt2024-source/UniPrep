@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CatalogContentService } from '../catalog-learning/catalog-content.service';
+import { Lesson } from '../lesson/entities/lesson.entity';
 import type { ChatToolDefinition } from './deepseek.client';
 import { ANSWER_SCHEMA, SUBMIT_ANSWER_TOOL } from './tutor.answer';
 import type { RawAnswer, TutorCitation } from './tutor.answer';
@@ -78,7 +82,28 @@ export const TOOL_DEFINITIONS: ChatToolDefinition[] = [
 
 @Injectable()
 export class TutorTools {
-	constructor(private readonly knowledge: TutorKnowledgeService) {}
+	private readonly logger = new Logger(TutorTools.name);
+
+	constructor(
+		private readonly knowledge: TutorKnowledgeService,
+		private readonly content: CatalogContentService,
+		@InjectRepository(Lesson) private readonly lessons: Repository<Lesson>,
+	) {}
+
+	/**
+	 * Bắt đầu soạn nội dung cho bài trống (chạy nền, không chờ): sinh một bài mất cỡ vài chục giây,
+	 * quá lâu để giữ vòng tool call. Lượt sau chỉ mục tự dựng lại vì `updated_at` của bài đổi.
+	 */
+	private warmUp(lessonId: string): void {
+		void this.lessons
+			.findOne({ where: { id: lessonId } })
+			.then((lesson) => lesson && this.content.ensureLessonContent(lesson))
+			.catch((error: unknown) =>
+				this.logger.warn(
+					`Không soạn được nội dung bài ${lessonId}: ${error instanceof Error ? error.message : String(error)}`,
+				),
+			);
+	}
 
 	async execute(
 		name: string,
@@ -99,6 +124,10 @@ export class TutorTools {
 				Math.max(1, Number.isInteger(args.limit) ? Number(args.limit) : 5),
 			);
 			const hits = this.knowledge.search(index, query, { lessonKey, limit });
+			const emptyKeys = this.knowledge.emptyLessonKeys(index);
+			const scoped = lessonKey
+				? index.lessons.find((item) => item.key === lessonKey)
+				: undefined;
 			return {
 				query,
 				total_chunks: index.chunks.length,
@@ -113,9 +142,15 @@ export class TutorTools {
 							? `${chunk.text.slice(0, SEARCH_TEXT_LIMIT)}…`
 							: chunk.text,
 				})),
-				hint: hits.length
-					? undefined
-					: 'Không có đoạn nào khớp. Thử từ khoá tiếng Anh khác, đồng nghĩa, hoặc đọc bài liên quan bằng read_lesson.',
+				lessons_without_content: emptyKeys.length ? emptyKeys : undefined,
+				hint: scoped?.empty
+					? `Bài ${scoped.key} chưa có nội dung nên không tìm được gì trong bài này.`
+					: hits.length
+						? undefined
+						: 'Không có đoạn nào khớp. Thử từ khoá khác, đồng nghĩa, hoặc đọc bài liên quan bằng read_lesson.' +
+							(emptyKeys.length
+								? ` Lưu ý: các bài ${emptyKeys.join(', ')} chưa có nội dung, nếu chủ đề này thuộc một bài trong đó (đối chiếu tên bài trong mục lục) thì tự giảng theo tên bài, không trích dẫn.`
+								: ''),
 			};
 		}
 
@@ -126,6 +161,19 @@ export class TutorTools {
 				return {
 					error: `Không có bài "${key}". Mã bài hợp lệ: ${index.lessons.map((item) => item.key).join(', ')}`,
 				};
+			if (lesson.empty) {
+				if (lesson.generatable) this.warmUp(lesson.lessonId);
+				return {
+					lesson: lesson.key,
+					title: lesson.title,
+					chunks: [],
+					next_offset: null,
+					status: 'no_content',
+					note: lesson.generatable
+						? 'Bài này chưa có nội dung; hệ thống vừa bắt đầu soạn (mất khoảng một phút). Không có gì để trích dẫn. Tự giảng nội dung theo tên bài (không trích dẫn), không cần báo người học.'
+						: 'Bài này chưa có nội dung. Không có gì để trích dẫn; tự giảng nội dung theo tên bài, không cần báo người học.',
+				};
+			}
 			const all = index.chunks.filter((chunk) => chunk.lessonKey === key);
 			const offset = Math.max(
 				0,

@@ -1,3 +1,4 @@
+import { AI_GENERATION_TIMEOUT_MS } from '../catalog-learning';
 import { queryMethod } from '@/config';
 import type {
 	AssessmentListResponse,
@@ -85,10 +86,13 @@ export const updateSubmissionFeedback = (
 		}>
 	>;
 
+/** Bài tập của khoá mở từ Catalog được AI ra câu hỏi ở lần làm đầu tiên — chờ lâu hơn mặc định. */
 export const startQuizAttempt = (quizId: string) =>
-	queryMethod.post(`/quizzes/${quizId}/attempts`, {}) as Promise<
-		DefaultResponseType<QuizAttempt>
-	>;
+	queryMethod.post(
+		`/quizzes/${quizId}/attempts`,
+		{},
+		{ timeout: AI_GENERATION_TIMEOUT_MS },
+	) as Promise<DefaultResponseType<QuizAttempt>>;
 
 export const getQuizAttempt = (attemptId: string) =>
 	queryMethod.get(`/attempts/${attemptId}`) as Promise<

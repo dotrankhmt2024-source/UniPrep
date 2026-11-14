@@ -1,3 +1,4 @@
+import { CatalogContentService } from '../catalog-learning/catalog-content.service';
 import {
 	BadRequestException,
 	ConflictException,
@@ -26,6 +27,7 @@ import {
 	SUBMISSION_MIME_MAP,
 } from '../storage/storage.service';
 import { decodeUploadFileName } from '../storage/upload-file-name';
+import { NotificationService } from '../notification/notification.service';
 import { Quiz } from './entities/quiz.entity';
 import { QuizQuestion } from './entities/quiz-question.entity';
 import { QuizOption } from './entities/quiz-option.entity';
@@ -100,6 +102,8 @@ export class ExerciseService {
 		private readonly configService: ConfigService, // Dòng mới thêm
 		private readonly storage: StorageService,
 		private readonly dataSource: DataSource,
+		private readonly notifications: NotificationService,
+		private readonly catalogContent: CatalogContentService,
 	) {}
 
 	async findQuizzes(actor: AuthUser, query: QuizListQueryDto) {
@@ -128,6 +132,13 @@ export class ExerciseService {
 				{ actorId: actor.id },
 			);
 		}
+
+		// Quiz cá nhân (học viên tự chọn phạm vi bài) chỉ hiện với chính chủ — kể cả giảng viên cũng
+		// không thấy trong danh sách (vẫn xem được bài nộp qua khu chấm điểm).
+		builder.andWhere(
+			'(quiz.personalUserId IS NULL OR quiz.personalUserId = :ownerId)',
+			{ ownerId: actor.id },
+		);
 
 		if (query.courseId)
 			builder.andWhere('quiz.courseId = :courseId', {
@@ -285,8 +296,13 @@ export class ExerciseService {
 				'Bài kiểm tra trắc nghiệm phải có ít nhất một câu hỏi.',
 			);
 		}
+		const wasPublished = quiz.isPublished;
 		quiz.isPublished = true;
 		const saved = await this.quizzes.save(quiz);
+		if (!wasPublished)
+			await this.notifications.safely(`new_content quiz ${saved.id}`, () =>
+				this.notifications.notifyQuizPublished(saved.id),
+			);
 		return {
 			id: saved.id,
 			status: this.statusOf(saved),
@@ -386,6 +402,8 @@ export class ExerciseService {
 		});
 		if (!enrollment)
 			throw new ForbiddenException('Bạn chưa ghi danh khoá học này.');
+		// Bài tập của chủ đề tạo từ Catalog: AI ra câu hỏi ở lần làm bài đầu tiên rồi lưu lại.
+		await this.catalogContent.ensureQuizQuestions(quiz);
 		const questions = await this.questionQuery(quizId, false);
 		// Bài tập nộp tệp hợp lệ dù không có câu hỏi nào; chỉ trắc nghiệm mới bắt buộc có câu hỏi.
 		if (requiresQuestions(quiz.submissionMode) && !questions.length)
@@ -1011,11 +1029,16 @@ export class ExerciseService {
 		}
 		if (dto.teacherFeedback !== undefined)
 			submission.feedback = dto.teacherFeedback;
+		// Đã từng được giảng viên chốt (có `feedback_at`) ⇒ lần này là chấm lại.
+		const isRegrade = submission.feedbackAt !== null;
 		submission.status = 'graded';
 		submission.gradedBy = actor.id;
 		submission.gradedAt = new Date();
 		submission.feedbackAt = new Date();
 		const saved = await this.submissions.save(submission);
+		await this.notifications.safely(`grade_published ${saved.id}`, () =>
+			this.notifications.notifyGradePublished(saved.id, isRegrade),
+		);
 		return {
 			id: saved.id,
 			score: saved.score,
@@ -1080,6 +1103,9 @@ export class ExerciseService {
 							where: { quizId: quiz.id, userId: actor.id },
 						})
 					: undefined,
+			/** Quiz cá nhân do học viên tự chọn phạm vi bài. */
+			isPersonal: Boolean(quiz.personalUserId),
+			scopeLessonCount: quiz.scopeLessonIds?.length ?? null,
 			createdAt: quiz.createdAt,
 			updatedAt: quiz.updatedAt,
 		};
@@ -1237,12 +1263,19 @@ export class ExerciseService {
 
 	private async assertCanViewQuiz(quiz: Quiz, actor: AuthUser) {
 		if (actor.role === 'student') {
+			this.assertPersonalOwner(quiz, actor);
 			if (!quiz.isPublished)
 				throw new ForbiddenException('Bài kiểm tra chưa được công bố.');
 			await this.assertStudentCanAttempt(quiz, actor, false);
 			return;
 		}
 		await this.courseAccess.assertCanManage(quiz.courseId, actor);
+	}
+
+	/** Quiz cá nhân của người khác: trả 404 như thể không tồn tại (không lộ là có quiz đó). */
+	private assertPersonalOwner(quiz: Quiz, actor: AuthUser) {
+		if (quiz.personalUserId && quiz.personalUserId !== actor.id)
+			throw new NotFoundException('Không tìm thấy bài kiểm tra.');
 	}
 
 	private async assertStudentCanAttempt(
@@ -1252,6 +1285,7 @@ export class ExerciseService {
 	) {
 		if (actor.role !== 'student')
 			throw new ForbiddenException('Chỉ học viên mới có thể làm bài.');
+		this.assertPersonalOwner(quiz, actor);
 		if (!quiz.isPublished)
 			throw new ForbiddenException('Bài kiểm tra chưa được công bố.');
 		const enrollment = await this.enrollments.findOne({

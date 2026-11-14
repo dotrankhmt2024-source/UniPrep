@@ -26,6 +26,9 @@ import {
 	type NotificationItem,
 } from '@/types';
 
+/** Chu kỳ hỏi lại danh sách thông báo (ms). */
+const NOTIFICATION_POLL_MS = 60_000;
+
 /**
  * Thanh trên cùng của layout private: thương hiệu, tìm kiếm toàn cục và cụm người dùng / thông báo.
  * Nhận trạng thái thu gọn sider từ `layouts/private`.
@@ -79,6 +82,12 @@ const Header = ({
 
 	useEffect(() => {
 		void fetchNotifications();
+		// Thông báo tự động (nhắc hạn, cảnh báo rủi ro, có điểm…) sinh ở server nên cần hỏi lại định kỳ
+		// để badge cập nhật mà không phải tải lại trang. Bỏ qua khi tab đang ẩn.
+		const timer = window.setInterval(() => {
+			if (document.visibilityState === 'visible') void fetchNotifications();
+		}, NOTIFICATION_POLL_MS);
+		return () => window.clearInterval(timer);
 	}, [fetchNotifications]);
 
 	const handleOpenNotifications = (open: boolean) => {
@@ -101,10 +110,18 @@ const Header = ({
 			}
 		}
 
+		// Ưu tiên `payload.link` (server ghi sẵn đường dẫn đúng màn hình); thông báo cũ chỉ có `courseId`.
+		const link = item.payload?.link;
 		const courseId = item.payload?.courseId;
-		if (typeof courseId === 'string' && courseId) {
+		const target =
+			typeof link === 'string' && link.startsWith('/')
+				? link
+				: typeof courseId === 'string' && courseId
+					? `/courses/${courseId}`
+					: null;
+		if (target) {
 			setPopoverOpen(false);
-			navigate(`/courses/${courseId}`);
+			navigate(target);
 		}
 	};
 
@@ -258,7 +275,12 @@ const Header = ({
 						</div>
 					}
 				>
-					<AntBadge count={unreadCount} size="small" color="#ba1a1a" offset={[-4, 4]}>
+					<AntBadge
+						count={unreadCount}
+						size="small"
+						color="#ba1a1a"
+						offset={[-4, 4]}
+					>
 						<IconBtn icon={<Icon name="notifications" />} title="Thông báo" />
 					</AntBadge>
 				</Popover>

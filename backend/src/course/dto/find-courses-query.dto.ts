@@ -48,7 +48,21 @@ const toStatusList = ({ value }: { value: unknown }): unknown => {
  * nhận từ query: nó do `CourseAccessService.applyVisibilityScope` quyết định theo vai trò trong
  * token — client gửi thêm bộ lọc không mở rộng được quyền.
  */
+export const COURSE_SOURCE_VALUES = ['catalog', 'manual'] as const;
+export type CourseSource = (typeof COURSE_SOURCE_VALUES)[number];
+
 export class FindCoursesQueryDto extends PaginationQueryDto {
+	@ApiPropertyOptional({
+		enum: COURSE_SOURCE_VALUES,
+		description:
+			'catalog: khoá mở từ đề cương của trường (Catalog) · manual: khoá giảng viên tự tạo. Bỏ trống = cả hai.',
+	})
+	@IsOptional()
+	@IsIn(COURSE_SOURCE_VALUES, {
+		message: 'Nguồn khoá học không hợp lệ (chỉ nhận: catalog, manual).',
+	})
+	source?: CourseSource;
+
 	@ApiPropertyOptional({ description: 'Lọc theo danh mục (UUID v4).' })
 	@IsOptional()
 	@IsUUID('4', { message: 'Danh mục không hợp lệ.' })

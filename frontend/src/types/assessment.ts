@@ -75,6 +75,9 @@ export interface AssessmentQuiz {
 	closeAt: string | null;
 	myBestScore: number | null;
 	myAttemptCount?: number;
+	/** Quiz cá nhân do học viên tự chọn phạm vi bài (AI ra đề). */
+	isPersonal?: boolean;
+	scopeLessonCount?: number | null;
 	createdAt: string;
 	updatedAt: string;
 	questions?: AssessmentQuestion[];

@@ -15,6 +15,7 @@ import {
 } from 'antd';
 import { Link, useSearchParams } from 'react-router';
 import { getCourses } from '@/apis/course';
+import { getMyEnrollments } from '@/apis/enrollment';
 import { getLessonById } from '@/apis/lesson';
 import {
 	deleteTutorSession,
@@ -26,7 +27,6 @@ import {
 import { Icon, IOutLinedBtn, ISolidBtn } from '@/components';
 import { getApiErrorMessage } from '@/config/query-method/axiosMethod.config';
 import type {
-	CourseListItem,
 	LessonDetail,
 	TutorAnswer,
 	TutorSession,
@@ -34,6 +34,11 @@ import type {
 } from '@/types';
 import { AnswerView } from './components/AnswerView';
 import { Trajectory } from './components/Trajectory';
+import {
+	CourseSwitcher,
+	type SwitcherCourse,
+} from './components/CourseSwitcher';
+import { useAuth } from '@/contexts/auth-context';
 import '@/styles/tutor.css';
 
 const { Text, Paragraph } = Typography;
@@ -60,7 +65,9 @@ const TutorPage = () => {
 	const sessionId = params.get('session');
 
 	const [configured, setConfigured] = useState<boolean | null>(null);
-	const [courses, setCourses] = useState<CourseListItem[]>([]);
+	const { user } = useAuth();
+	const isStudent = user?.role === 'student';
+	const [courses, setCourses] = useState<SwitcherCourse[]>([]);
 	const [coursesLoading, setCoursesLoading] = useState(true);
 	const [sessions, setSessions] = useState<TutorSession[]>([]);
 	const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -91,17 +98,50 @@ const TutorPage = () => {
 		void getTutorStatus()
 			.then((res) => setConfigured(Boolean(res.data?.configured)))
 			.catch(() => setConfigured(null));
-		void getCourses({ take: 100, status: 'published' })
-			.then((res) => setCourses(res.data?.items ?? []))
-			.catch((error) => toast.error(getApiErrorMessage(error)))
-			.finally(() => setCoursesLoading(false));
 	}, []);
 
-	// Chưa chọn khoá học: chọn sẵn khoá đầu tiên để trang không trống.
+	/**
+	 * Học viên: chỉ các môn đang đăng ký (cùng nguồn với trang Khoá học của tôi) — trợ giảng chỉ trả
+	 * lời trên học liệu môn đã ghi danh. Giảng viên/admin: các khoá họ xem được, như trước.
+	 */
 	useEffect(() => {
-		if (!courseId && !sessionId && courses.length)
-			updateParams({ course: courses[0].id });
-	}, [courseId, sessionId, courses, updateParams]);
+		if (!user) return;
+		setCoursesLoading(true);
+		const load = isStudent
+			? getMyEnrollments({ take: 100, status: 'active,completed' }).then(
+					(res): SwitcherCourse[] =>
+						(res.data?.items ?? []).map((item) => ({
+							id: item.course.id,
+							code: item.course.code,
+							title: item.course.title,
+							progressPercent: item.progressPercent,
+							completedLessons: item.completedLessons,
+							totalLessons: item.totalLessons,
+						})),
+				)
+			: getCourses({ take: 100, status: 'published' }).then(
+					(res): SwitcherCourse[] =>
+						(res.data?.items ?? []).map((item) => ({
+							id: item.id,
+							code: item.code,
+							title: item.title,
+							progressPercent: null,
+						})),
+				);
+		void load
+			.then(setCourses)
+			.catch((error) => toast.error(getApiErrorMessage(error)))
+			.finally(() => setCoursesLoading(false));
+	}, [user, isStudent]);
+
+	// Chưa chọn khoá học (hoặc học viên mở link tới môn mình không đăng ký): chọn sẵn môn đầu tiên
+	// trong danh sách để trang không trống.
+	useEffect(() => {
+		if (sessionId || coursesLoading || !courses.length) return;
+		const known = courses.some((item) => item.id === courseId);
+		if (!courseId || (isStudent && !known))
+			updateParams({ course: courses[0].id, lesson: null });
+	}, [courseId, sessionId, courses, coursesLoading, isStudent, updateParams]);
 
 	const loadSessions = useCallback(async () => {
 		if (!courseId) return setSessions([]);
@@ -348,21 +388,15 @@ const TutorPage = () => {
 					</p>
 				</div>
 				<Space wrap>
-					<Select
-						style={{ width: 260 }}
-						placeholder="Chọn khoá học"
-						value={courseId ?? undefined}
+					<CourseSwitcher
+						courses={courses}
+						value={courseId}
 						loading={coursesLoading}
 						disabled={busy}
-						showSearch
-						optionFilterProp="label"
+						isStudent={isStudent}
 						onChange={(id) =>
 							updateParams({ course: id, session: null, lesson: null })
 						}
-						options={courses.map((item) => ({
-							value: item.id,
-							label: `${item.code} · ${item.title}`,
-						}))}
 					/>
 					<Select
 						style={{ width: 240 }}

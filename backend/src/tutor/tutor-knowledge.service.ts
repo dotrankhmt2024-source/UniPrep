@@ -28,6 +28,14 @@ export interface KnowledgeLesson {
 	originalTitle: string | null;
 	sourceUrl: string | null;
 	chunkCount: number;
+	/**
+	 * Bài chưa có nội dung (`chunkCount = 0`). Bài tạo từ Catalog được AI soạn lần đầu khi có người
+	 * mở bài (`CatalogContentService.ensureLessonContent`), nên mục lục có thể đi trước học liệu:
+	 * trợ giảng phải biết bài nào đang trống để không coi "không tìm thấy" là "khoá học không dạy".
+	 */
+	empty: boolean;
+	/** Bài trống nhưng sinh được nội dung (có `catalog_key`). */
+	generatable: boolean;
 }
 
 export interface KnowledgeChunk {
@@ -186,6 +194,7 @@ export class TutorKnowledgeService {
 				'lesson.summary',
 				'lesson.content',
 				'lesson.contentFormat',
+				'lesson.catalogKey',
 				'lesson.orderIndex',
 				'lesson.updatedAt',
 			])
@@ -257,6 +266,8 @@ export class TutorKnowledgeService {
 				originalTitle,
 				sourceUrl: firstUrl(row.summary),
 				chunkCount: count,
+				empty: count === 0,
+				generatable: count === 0 && Boolean(row.catalogKey),
 			});
 		}
 
@@ -277,6 +288,11 @@ export class TutorKnowledgeService {
 			docFreq,
 			avgLength,
 		};
+	}
+
+	/** Mã các bài chưa có nội dung, theo thứ tự mục lục. */
+	emptyLessonKeys(index: CourseIndex): string[] {
+		return index.lessons.filter((lesson) => lesson.empty).map((l) => l.key);
 	}
 
 	/** BM25 (k1 = 1.2, b = 0.75) + điểm cộng khi cả cụm từ xuất hiện nguyên văn. */

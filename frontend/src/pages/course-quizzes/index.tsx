@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Empty, Skeleton } from 'antd';
 import { Link, useParams } from 'react-router';
 import { getQuizzes } from '@/apis/assessment';
-import { Badge, ErrorBadge, Icon } from '@/components';
+import { Badge, ErrorBadge, Icon, ISolidBtn } from '@/components';
 import { getApiErrorMessage } from '@/config/query-method/axiosMethod.config';
 import { useAuth } from '@/contexts/auth-context';
 import type { AssessmentQuiz } from '@/types';
+import CustomQuizModal from './custom-quiz-modal';
 
 const CourseQuizzesPage = () => {
 	const { courseId = '' } = useParams<{ courseId: string }>();
@@ -13,6 +14,7 @@ const CourseQuizzesPage = () => {
 	const [items, setItems] = useState<AssessmentQuiz[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
+	const [customOpen, setCustomOpen] = useState(false);
 
 	/**
 	 * Giảng viên/admin **không** làm bài ở đây (`startQuizAttempt` yêu cầu role `student`), nên thay vì
@@ -55,12 +57,35 @@ const CourseQuizzesPage = () => {
 			>
 				← Về khoá học
 			</Link>
-			<header>
-				<p className="font-label-md text-primary">
-					{canManage ? 'GIẢNG DẠY' : 'HỌC TẬP'}
-				</p>
-				<h1 className="mt-1 font-headline-md text-on-surface">Bài kiểm tra</h1>
+			<header className="flex flex-wrap items-end justify-between gap-space-md">
+				<div>
+					<p className="font-label-md text-primary">
+						{canManage ? 'GIẢNG DẠY' : 'HỌC TẬP'}
+					</p>
+					<h1 className="mt-1 font-headline-md text-on-surface">
+						Bài kiểm tra
+					</h1>
+				</div>
+				{user?.role === 'student' && (
+					<ISolidBtn
+						icon={<Icon name="auto_awesome" size={18} />}
+						onClick={() => setCustomOpen(true)}
+					>
+						Tạo quiz theo tiến độ
+					</ISolidBtn>
+				)}
 			</header>
+			{user?.role === 'student' && (
+				<p className="font-body-sm text-on-surface-variant">
+					Quiz theo tiến độ: chọn các bài bạn muốn ôn (mặc định là các bài đã
+					học), AI ra đề riêng cho bạn từ đúng phần nội dung đó.
+				</p>
+			)}
+			<CustomQuizModal
+				courseId={courseId}
+				open={customOpen}
+				onClose={() => setCustomOpen(false)}
+			/>
 			{error && (
 				<ErrorBadge icon={<Icon name="error" size={14} />}>{error}</ErrorBadge>
 			)}
@@ -96,6 +121,14 @@ const CourseQuizzesPage = () => {
 												: 'Bản nháp'}
 									</Badge>
 									<Badge status="info">{quiz.questionCount} câu</Badge>
+									{quiz.isPersonal && (
+										<Badge status="neutral">
+											Quiz của bạn
+											{quiz.scopeLessonCount
+												? ` · ${quiz.scopeLessonCount} bài`
+												: ''}
+										</Badge>
+									)}
 								</div>
 								<h2 className="font-title-lg text-on-surface">{quiz.title}</h2>
 								<p className="font-body-sm text-on-surface-variant">

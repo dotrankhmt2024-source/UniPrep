@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CatalogLearningModule } from '../catalog-learning/catalog-learning.module';
 import { CourseModule } from '../course/course.module';
 import { Lesson } from '../lesson/entities/lesson.entity';
 import { DeepSeekClient } from './deepseek.client';
@@ -20,6 +21,8 @@ import { TutorTools } from './tutor.tools';
 	imports: [
 		TypeOrmModule.forFeature([TutorSession, TutorStep, Lesson]),
 		CourseModule,
+		// `CatalogContentService`: soạn nội dung cho bài trống khi trợ giảng cần đọc tới.
+		CatalogLearningModule,
 	],
 	controllers: [TutorController],
 	providers: [TutorService, TutorTools, TutorKnowledgeService, DeepSeekClient],

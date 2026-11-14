@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import {
 	ApiBearerAuth,
 	ApiOkResponse,
@@ -9,6 +9,8 @@ import { NotificationService } from './notification.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { buildSuccess, ApiResponseDto } from '../common/dto/api-response.dto';
 import { UUID_V4_PIPE } from '../common/pipes/uuid-param.pipe';
+import { Roles } from '../common/decorators/roles.decorator';
+import { BroadcastNotificationDto } from './dto/broadcast-notification.dto';
 import type { AuthUser } from '../auth/types/authenticated-user.type';
 import type { Notification } from './entities/notification.entity';
 
@@ -29,6 +31,24 @@ export class NotificationController {
 	): Promise<ApiResponseDto<{ items: Notification[]; unreadCount: number }>> {
 		const data = await this.notificationService.findMyNotifications(actor.id);
 		return buildSuccess(data);
+	}
+
+	@Post('broadcast')
+	@Roles('admin')
+	@ApiBearerAuth()
+	@ApiOperation({
+		summary:
+			'Admin phát thông báo hệ thống (system) tới người dùng theo vai trò, khoá học hoặc đích danh',
+	})
+	@ApiOkResponse({ type: ApiResponseDto })
+	async broadcast(
+		@Body() dto: BroadcastNotificationDto,
+	): Promise<ApiResponseDto<{ sentCount: number }>> {
+		const sentCount = await this.notificationService.broadcastSystem(dto);
+		return buildSuccess(
+			{ sentCount },
+			`Đã gửi thông báo tới ${sentCount} người dùng.`,
+		);
 	}
 
 	@Patch('read-all')

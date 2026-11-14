@@ -204,6 +204,12 @@ export class CourseService {
 			builder.andWhere('course.level = :level', { level: query.level });
 		}
 
+		if (query.source === 'catalog') {
+			builder.andWhere('course.catalogRef IS NOT NULL');
+		} else if (query.source === 'manual') {
+			builder.andWhere('course.catalogRef IS NULL');
+		}
+
 		if (search) {
 			// `COALESCE(summary, '')` để khoá không có mô tả ngắn vẫn so sánh được: `NULL LIKE ...` là
 			// `NULL` (không phải `false`) nên không có `COALESCE` thì điều kiện OR sẽ nuốt mất kết quả.

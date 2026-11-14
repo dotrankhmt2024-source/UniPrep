@@ -100,6 +100,8 @@ describe('LessonService progress', () => {
 			} as never,
 			{} as never,
 			{} as never,
+			{} as never,
+			{} as never,
 		);
 	});
 

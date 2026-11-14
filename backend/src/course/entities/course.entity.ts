@@ -161,4 +161,16 @@ export class Course extends BaseEntityCustom {
 	/** Soft delete: catalog và index partial đều lọc theo cột này. */
 	@Column({ type: 'timestamptz', name: 'deleted_at', nullable: true })
 	deletedAt: Date | null;
+
+	/**
+	 * `CO1023@9.1` khi khoá được tạo từ đề cương bên Catalog (nội dung bài do AI sinh).
+	 * Index duy nhất thật là partial (`WHERE catalog_ref IS NOT NULL`) — tạo trong migration.
+	 */
+	@Column({
+		type: 'varchar',
+		name: 'catalog_ref',
+		length: 80,
+		nullable: true,
+	})
+	catalogRef: string | null;
 }

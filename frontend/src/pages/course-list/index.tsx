@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Input, Select, Tooltip, message, type TableProps } from 'antd';
-import { Link, useNavigate } from 'react-router';
+import { Input, Select, Tabs, Tooltip, message, type TableProps } from 'antd';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { getCategories } from '@/apis/category';
 import { getCourses } from '@/apis/course';
 import { Badge, ErrorBadge, Icon, IOutLinedBtn, ITable } from '@/components';
 import { getApiErrorMessage } from '@/config/query-method/axiosMethod.config';
 import { useDebounce } from '@/hooks';
 import { useAppSelector } from '@/store/hooks';
+import CatalogCourseList from './catalog-course-list';
 import {
 	COURSE_LEVEL_LABEL,
 	COURSE_PUBLISH_STATUS_LABEL,
@@ -81,7 +82,17 @@ const ORDER_OPTIONS: { value: PageOrder; label: string }[] = [
  */
 const Dash = () => <span className="text-on-surface-variant">—</span>;
 
-const CourseListPage = () => {
+interface ManagedCourseListProps {
+	/** Chỉ lấy khoá theo nguồn (tab "Môn học tự mở" dùng `manual`). Bỏ trống = mọi khoá. */
+	source?: 'catalog' | 'manual';
+	/** Nằm trong tab của trang học viên: bỏ tiêu đề trang và lề ngoài. */
+	embedded?: boolean;
+}
+
+const ManagedCourseList = ({
+	source,
+	embedded = false,
+}: ManagedCourseListProps) => {
 	const navigate = useNavigate();
 	const role = useAppSelector((state) => state.auth.user?.role);
 
@@ -166,6 +177,7 @@ const CourseListPage = () => {
 					status: statusParam,
 					sortBy,
 					order,
+					source,
 				});
 
 				if (cancelled) return;
@@ -206,6 +218,7 @@ const CourseListPage = () => {
 		statusParam,
 		sortBy,
 		order,
+		source,
 		reloadKey,
 	]);
 
@@ -391,20 +404,35 @@ const CourseListPage = () => {
 	];
 
 	return (
-		<div className="space-y-space-lg p-gutter">
-			<div className="flex flex-wrap items-center gap-space-sm">
-				<h1 className="font-headline-lg font-headline-lg text-on-surface">
-					Danh sách khoá học
-				</h1>
-				<Badge status="neutral" size="md">
-					{meta?.itemCount ?? 0} khoá học
-				</Badge>
-			</div>
+		<div
+			className={embedded ? 'space-y-space-lg' : 'space-y-space-lg p-gutter'}
+		>
+			{embedded ? (
+				<div className="flex flex-wrap items-center gap-space-sm">
+					<Badge status="neutral" size="md">
+						{meta?.itemCount ?? 0} khoá học
+					</Badge>
+					<span className="font-body-sm font-body-sm text-on-surface-variant">
+						Khoá học do giảng viên tự soạn trên UniPrep.
+					</span>
+				</div>
+			) : (
+				<>
+					<div className="flex flex-wrap items-center gap-space-sm">
+						<h1 className="font-headline-lg font-headline-lg text-on-surface">
+							Danh sách khoá học
+						</h1>
+						<Badge status="neutral" size="md">
+							{meta?.itemCount ?? 0} khoá học
+						</Badge>
+					</div>
 
-			<p className="font-body-sm font-body-sm text-on-surface-variant">
-				Dùng ô tìm kiếm và các bộ lọc bên dưới để thu hẹp danh sách; bấm vào tên
-				khoá học để xem chi tiết.
-			</p>
+					<p className="font-body-sm font-body-sm text-on-surface-variant">
+						Dùng ô tìm kiếm và các bộ lọc bên dưới để thu hẹp danh sách; bấm vào
+						tên khoá học để xem chi tiết.
+					</p>
+				</>
+			)}
 
 			{loadError && (
 				<div className="flex flex-wrap items-center gap-space-sm">
@@ -507,6 +535,63 @@ const CourseListPage = () => {
 			</div>
 		</div>
 	);
+};
+
+type StudentCourseTab = 'school' | 'custom';
+
+const STUDENT_TABS: { key: StudentCourseTab; label: string }[] = [
+	{ key: 'school', label: 'Môn học của trường' },
+	{ key: 'custom', label: 'Môn học tự mở' },
+];
+
+/**
+ * Trang khoá học của học viên có hai tab:
+ * - **Môn học của trường**: mọi môn trong Catalog (đề cương của trường), AI soạn bài khi mở tới;
+ * - **Môn học tự mở**: khoá giảng viên tự tạo trên UniPrep (`source=manual`).
+ *
+ * Tab đang xem nằm trên URL (`?tab=custom`) để tải lại trang hoặc gửi link vẫn mở đúng tab. Mỗi tab
+ * chỉ được render khi đang chọn (`destroyOnHidden`) nên không gọi API của tab đang ẩn.
+ */
+const StudentCourseTabs = () => {
+	const [searchParams, setSearchParams] = useSearchParams();
+	const activeTab: StudentCourseTab =
+		searchParams.get('tab') === 'custom' ? 'custom' : 'school';
+
+	return (
+		<div className="space-y-space-md p-gutter">
+			<h1 className="font-headline-lg font-headline-lg text-on-surface">
+				Danh sách khoá học
+			</h1>
+			<Tabs
+				activeKey={activeTab}
+				destroyOnHidden
+				onChange={(key) =>
+					setSearchParams(key === 'school' ? {} : { tab: key }, {
+						replace: true,
+					})
+				}
+				items={STUDENT_TABS.map((tab) => ({
+					key: tab.key,
+					label: tab.label,
+					children:
+						tab.key === 'school' ? (
+							<CatalogCourseList embedded />
+						) : (
+							<ManagedCourseList source="manual" embedded />
+						),
+				}))}
+			/>
+		</div>
+	);
+};
+
+/**
+ * Học viên: hai tab (xem `StudentCourseTabs`). Giảng viên/admin: bảng quản lý mọi khoá học trong
+ * UniPrep như trước. Tách component để mỗi nhánh giữ nguyên thứ tự hook.
+ */
+const CourseListPage = () => {
+	const role = useAppSelector((state) => state.auth.user?.role);
+	return role === 'student' ? <StudentCourseTabs /> : <ManagedCourseList />;
 };
 
 export default CourseListPage;

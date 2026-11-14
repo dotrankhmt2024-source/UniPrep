@@ -13,6 +13,7 @@ import RichTextEditor, { CasingExtension } from './RichTextEditor';
 import Badge, { ErrorBadge } from './Badge';
 import Icon from './Icon';
 import ProseContent from './ProseContent';
+import MathText from './MathText';
 
 export {
 	ISolidBtn,
@@ -33,6 +34,7 @@ export {
 	ErrorBadge,
 	Icon,
 	ProseContent,
+	MathText,
 };
 
 export type { ISolidBtnProps, IOutLinedBtnProps } from './Button';
@@ -42,3 +44,4 @@ export type { PasswordInputProps, ConfirmPasswordProps } from './PasswordInput';
 export type { RichTextEditorProps } from './RichTextEditor';
 export type { BadgeProps, BadgeStatus, BadgeSize } from './Badge';
 export type { ProseContentProps } from './ProseContent';
+export type { MathTextProps } from './MathText';

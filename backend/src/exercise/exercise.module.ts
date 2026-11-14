@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CatalogLearningModule } from '../catalog-learning/catalog-learning.module';
 import { CourseModule } from '../course/course.module';
+import { NotificationModule } from '../notification/notification.module';
 import { Enrollment } from '../course/entities/enrollment.entity';
 import { Course } from '../course/entities/course.entity';
 import { Quiz } from './entities/quiz.entity';
@@ -15,6 +17,8 @@ import { ExerciseService } from './exercise.service';
 @Module({
 	imports: [
 		CourseModule,
+		NotificationModule,
+		CatalogLearningModule,
 		TypeOrmModule.forFeature([
 			Course,
 			Enrollment,
